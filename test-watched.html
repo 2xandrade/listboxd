@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Watched Films</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Test Watched Films Feature</h1>
+        </header>
+        <main id="main-content">
+            <div id="main-tabs" class="main-tabs">
+                <button class="main-tab-btn active" data-tab-id="explore">Explorar Filmes</button>
+                <button class="main-tab-btn" data-tab-id="shared">Lista Compartilhada</button>
+                <button class="main-tab-btn" data-tab-id="watched">Filmes Assistidos</button>
+            </div>
+
+            <section id="shared-list">
+                <h2>Lista Compartilhada</h2>
+                <div id="shared-list-container"></div>
+            </section>
+
+            <section id="watched-films" class="hidden">
+                <h2>Filmes Assistidos</h2>
+                <div id="watched-films-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+    <script src="config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/list.js"></script>
+
+    <script>
+        // Initialize services
+        const storageManager = new StorageManager();
+        const listService = new ListService(storageManager);
+
+        // Add some test data
+        const testFilm1 = {
+            id: 550,
+            title: 'Fight Club',
+            poster: 'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg',
+            rating: 8.4,
+            genres: ['Drama', 'Thriller'],
+            year: 1999,
+            overview: 'A ticking-time-bomb insomniac and a slippery soap salesman...'
+        };
+
+        const testFilm2 = {
+            id: 278,
+            title: 'The Shawshank Redemption',
+            poster: 'https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg',
+            rating: 8.7,
+            genres: ['Drama', 'Crime'],
+            year: 1994,
+            overview: 'Framed in the 1940s for the double murder...'
+        };
+
+        // Add films to shared list
+        try {
+            listService.addFilmToList(testFilm1, 'user1', 'Alice');
+            listService.addFilmToList(testFilm2, 'user2', 'Bob');
+            console.log('✅ Added test films to shared list');
+        } catch (e) {
+            console.log('Films already in list or error:', e.message);
+        }
+
+        // Mark one as watched
+        try {
+            listService.markAsWatched(550, 9.5, 'user1', 'Alice', 'Great movie night!');
+            console.log('✅ Marked Fight Club as watched');
+        } catch (e) {
+            console.log('Error marking as watched:', e.message);
+        }
+
+        // Render shared list
+        function renderSharedList() {
+            const container = document.getElementById('shared-list-container');
+            const entries = listService.getSharedList();
+            
+            container.innerHTML = '';
+            
+            if (entries.length === 0) {
+                container.innerHTML = '<div class="empty-message">Lista vazia</div>';
+                return;
+            }
+            
+            entries.forEach(entry => {
+                const div = document.createElement('div');
+                div.className = 'list-entry';
+                div.innerHTML = `
+                    <img src="${entry.film.poster}" class="film-poster" />
+                    <div class="entry-info">
+                        <h3 class="film-title">${entry.film.title}</h3>
+                        <div class="film-meta">
+                            <span class="film-rating">★ ${entry.film.rating.toFixed(1)}</span>
+                            <span class="film-year">(${entry.film.year})</span>
+                        </div>
+                        <div class="film-genres">${entry.film.genres.join(', ')}</div>
+                        <div class="entry-metadata">
+                            <span class="entry-user">Adicionado por: ${entry.addedBy}</span>
+                        </div>
+                        <div class="entry-actions">
+                            <button class="mark-watched-btn" onclick="markAsWatched(${entry.film.id})">✓ Marcar como Assistido</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Render watched films
+        function renderWatchedFilms() {
+            const container = document.getElementById('watched-films-container');
+            const watchedFilms = listService.getWatchedList();
+            
+            container.innerHTML = '';
+            
+            if (watchedFilms.length === 0) {
+                container.innerHTML = '<div class="empty-message">Nenhum filme assistido ainda</div>';
+                return;
+            }
+            
+            watchedFilms.forEach(watched => {
+                const div = document.createElement('div');
+                div.className = 'watched-entry';
+                div.innerHTML = `
+                    <img src="${watched.film.poster}" class="film-poster" />
+                    <div class="watched-info">
+                        <h3 class="film-title">${watched.film.title}</h3>
+                        <div class="film-meta">
+                            <span class="film-rating">★ ${watched.film.rating.toFixed(1)}</span>
+                            <span class="film-year">(${watched.film.year})</span>
+                        </div>
+                        <div class="film-genres">${watched.film.genres.join(', ')}</div>
+                        <div class="watched-rating">
+                            <span class="rating-label">Nossa Avaliação:</span>
+                            <span class="rating-value">★ ${watched.rating.toFixed(1)}/10</span>
+                        </div>
+                        <div class="watched-metadata">
+                            <span class="watched-user">Avaliado por: ${watched.ratedBy}</span>
+                        </div>
+                        ${watched.notes ? `<div class="watched-notes"><strong>Notas:</strong> ${watched.notes}</div>` : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Mark as watched function
+        function markAsWatched(filmId) {
+            const rating = prompt('Avalie o filme de 1 a 10:');
+            if (!rating) return;
+            
+            const ratingNum = parseFloat(rating);
+            if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 10) {
+                alert('Avaliação inválida');
+                return;
+            }
+            
+            const notes = prompt('Notas sobre a noite de filme (opcional):') || '';
+            
+            try {
+                listService.markAsWatched(filmId, ratingNum, 'user1', 'Alice', notes);
+                alert('Filme marcado como assistido!');
+                renderSharedList();
+                renderWatchedFilms();
+            } catch (e) {
+                alert('Erro: ' + e.message);
+            }
+        }
+
+        // Tab switching
+        document.querySelectorAll('.main-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update active button
+                document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Show/hide sections
+                const tabId = btn.dataset.tabId;
+                document.getElementById('shared-list').classList.add('hidden');
+                document.getElementById('watched-films').classList.add('hidden');
+                
+                if (tabId === 'shared') {
+                    document.getElementById('shared-list').classList.remove('hidden');
+                } else if (tabId === 'watched') {
+                    document.getElementById('watched-films').classList.remove('hidden');
+                }
+            });
+        });
+
+        // Initial render
+        renderSharedList();
+        renderWatchedFilms();
+        
+        console.log('✅ Test page loaded');
+        console.log('Shared list:', listService.getSharedList());
+        console.log('Watched list:', listService.getWatchedList());
+    </script>
+</body>
+</html>

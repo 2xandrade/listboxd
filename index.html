@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Letterboxd Manager - Gerencie e compartilhe sua lista de filmes">
+    <meta name="theme-color" content="#14181c">
+    <title>Letterboxd Manager</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Letterboxd Manager</h1>
+            <nav id="nav-menu"></nav>
+        </header>
+        <main id="main-content">
+            <!-- Tab Navigation -->
+            <div id="main-tabs" class="main-tabs hidden"></div>
+
+            <!-- Login Section -->
+            <section id="login-section" class="hidden">
+                <div class="login-container">
+                    <h2>Login</h2>
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="login-username">Usuário</label>
+                            <input type="text" id="login-username" name="username" required autocomplete="username" />
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Senha</label>
+                            <input type="password" id="login-password" name="password" required autocomplete="current-password" />
+                        </div>
+                        <div id="login-error" class="error hidden"></div>
+                        <button type="submit" id="login-btn">Entrar</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Film Listing Section -->
+            <section id="film-listing" class="hidden">
+                <h2>Explorar Filmes</h2>
+                
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <input type="text" id="film-search" placeholder="Buscar filmes por título..." />
+                    <button id="search-btn">Buscar</button>
+                </div>
+
+                <!-- Category Tabs -->
+                <div class="category-tabs">
+                    <button class="tab-btn active" data-category="popular">Populares</button>
+                    <button class="tab-btn" data-category="trending">Em Alta</button>
+                </div>
+
+                <!-- Loading State -->
+                <div id="films-loading" class="loading hidden">
+                    <p>Carregando filmes...</p>
+                </div>
+
+                <!-- Error Message -->
+                <div id="films-error" class="error hidden"></div>
+
+                <!-- Films Grid -->
+                <div id="films-grid" class="films-grid"></div>
+
+                <!-- Pagination Controls -->
+                <div id="pagination-controls" class="pagination-controls hidden">
+                    <button id="prev-page-btn" class="pagination-btn">← Anterior</button>
+                    <span id="pagination-info" class="pagination-info"></span>
+                    <button id="next-page-btn" class="pagination-btn">Próximo →</button>
+                </div>
+            </section>
+
+            <!-- Shared List Section -->
+            <section id="shared-list" class="hidden">
+                <h2>Lista Compartilhada</h2>
+                
+                <!-- Filter Controls -->
+                <div id="filter-controls" class="filter-controls">
+                    <div class="filter-group">
+                        <label for="genre-filter">Filtrar por gênero:</label>
+                        <select id="genre-filter" class="filter-select">
+                            <option value="">Todos os gêneros</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="name-filter">Buscar por nome:</label>
+                        <input type="text" id="name-filter" class="filter-input" placeholder="Digite o nome do filme..." />
+                    </div>
+                    
+                    <div class="filter-group">
+                        <button id="random-filter-btn" class="filter-btn">🎲 Ordem Aleatória</button>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <button id="clear-filters-btn" class="filter-btn clear-btn">✕ Limpar Filtros</button>
+                    </div>
+                </div>
+                
+                <!-- Filter Count Display -->
+                <div id="filter-count" class="filter-count hidden"></div>
+                
+                <div id="shared-list-container"></div>
+            </section>
+
+            <!-- Watched Films Section -->
+            <section id="watched-films" class="hidden">
+                <h2>Filmes Assistidos</h2>
+                
+                <!-- Filter Controls for Watched Films -->
+                <div id="watched-filter-controls" class="filter-controls">
+                    <div class="filter-group">
+                        <label for="watched-genre-filter">Filtrar por gênero:</label>
+                        <select id="watched-genre-filter" class="filter-select">
+                            <option value="">Todos os gêneros</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="watched-name-filter">Buscar por nome:</label>
+                        <input type="text" id="watched-name-filter" class="filter-input" placeholder="Digite o nome do filme..." />
+                    </div>
+                    
+                    <div class="filter-group">
+                        <button id="watched-random-filter-btn" class="filter-btn">🎲 Ordem Aleatória</button>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <button id="watched-clear-filters-btn" class="filter-btn clear-btn">✕ Limpar Filtros</button>
+                    </div>
+                </div>
+                
+                <!-- Filter Count Display -->
+                <div id="watched-filter-count" class="filter-count hidden"></div>
+                
+                <div id="watched-films-container"></div>
+            </section>
+        </main>
+
+        <!-- Film Details Modal -->
+        <div id="film-modal" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <button class="modal-close" aria-label="Fechar">&times;</button>
+                <div class="modal-body">
+                    <div class="modal-poster-container">
+                        <img id="modal-poster" class="modal-poster" alt="" />
+                    </div>
+                    <div class="modal-info">
+                        <h2 id="modal-title" class="modal-title"></h2>
+                        <div class="modal-meta">
+                            <span id="modal-rating" class="modal-rating"></span>
+                            <span id="modal-year" class="modal-year"></span>
+                        </div>
+                        <div id="modal-genres" class="modal-genres"></div>
+                        <div class="modal-synopsis">
+                            <h3>Sinopse</h3>
+                            <p id="modal-overview"></p>
+                        </div>
+                        <button id="modal-add-btn" class="modal-add-btn">Adicionar à Lista</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+    <script src="config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/films.js"></script>
+    <script src="js/list.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/tabs.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Storage - Letterboxd Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #14181c;
+            color: #fff;
+        }
+        .container {
+            background: #2c3440;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        h1 {
+            color: #00e054;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #00e054;
+            color: #14181c;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #00c048;
+        }
+        button.danger {
+            background: #ff4444;
+            color: white;
+        }
+        button.danger:hover {
+            background: #cc0000;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .message.success {
+            background: #00e054;
+            color: #14181c;
+            display: block;
+        }
+        .message.info {
+            background: #456;
+            color: white;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Reset Storage</h1>
+        <p>Esta página permite limpar todos os dados armazenados localmente.</p>
+        <p><strong>⚠️ Atenção:</strong> Isso irá remover todos os usuários e a lista de filmes!</p>
+        
+        <button onclick="resetStorage()" class="danger">Limpar Todos os Dados</button>
+        <button onclick="window.location.href='index.html'">Voltar para o App</button>
+        
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        function resetStorage() {
+            if (confirm('Tem certeza? Todos os dados serão perdidos!')) {
+                try {
+                    localStorage.clear();
+                    const messageEl = document.getElementById('message');
+                    messageEl.className = 'message success';
+                    messageEl.textContent = '✅ Dados limpos com sucesso! Recarregue a página principal para criar um novo usuário admin.';
+                    
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } catch (error) {
+                    const messageEl = document.getElementById('message');
+                    messageEl.className = 'message info';
+                    messageEl.textContent = '❌ Erro ao limpar dados: ' + error.message;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

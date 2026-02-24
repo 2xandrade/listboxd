@@ -1,0 +1,26 @@
+# Configuration files with sensitive data
+config.js
+.env
+
+# Node modules (if any dependencies are added later)
+node_modules/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Build artifacts (if build process is added later)
+dist/
+build/
+
+.kiro

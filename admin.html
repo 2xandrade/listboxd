@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Administração - Letterboxd Manager">
+    <meta name="theme-color" content="#14181c">
+    <title>Admin - Letterboxd Manager</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Administração - Letterboxd Manager</h1>
+            <nav id="nav-menu"></nav>
+        </header>
+        <main id="admin-content">
+            <section id="user-management">
+                <h2>Gerenciamento de Usuários</h2>
+                
+                <div id="add-user-form">
+                    <h3>Adicionar Novo Usuário</h3>
+                    <form id="create-user-form">
+                        <input type="text" id="username" placeholder="Nome de usuário" required>
+                        <input type="password" id="password" placeholder="Senha" required>
+                        <label>
+                            <input type="checkbox" id="is-admin">
+                            Administrador
+                        </label>
+                        <button type="submit">Adicionar Usuário</button>
+                    </form>
+                </div>
+
+                <div id="user-list">
+                    <h3>Usuários Cadastrados</h3>
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Tipo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <!-- Users will be dynamically loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+    <script src="config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

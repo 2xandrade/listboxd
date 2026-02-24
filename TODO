@@ -1,0 +1,7 @@
+- Filtros de gênero ainda não funcionam corretamente, se um filme houver vários gêneros, deve puxar independente se tiver 5 ou apenas 1
+- Deixar modal de review e rating mais bonito.
+- Sinopses não estão sendo puxadas corretamente
+- O projeto será postado no github, preciso que credenciais e arquivos não necessários estejam incluidos no .gitignote
+- Deixar o card de Filmes assistidos melhor
+- Tirar o "Lista compartilhada" e o "Filmes Assistidos" do final da tela de explorar Filmes
+- Embeleze a UI/UX
