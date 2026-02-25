@@ -39,12 +39,24 @@ jobs:
       - name: Create config.js with API key
         run: |
           cat > config.js << EOF
-          // TMDB API Configuration
+          // Letterboxd Manager Configuration
           const CONFIG = {
-            TMDB_API_KEY: '${{ secrets.TMDB_API_KEY }}',
-            TMDB_BASE_URL: 'https://api.themoviedb.org/3',
-            TMDB_IMAGE_BASE_URL: 'https://image.tmdb.org/t/p/w500'
+              tmdb: {
+                  apiKey: '${{ secrets.TMDB_API_KEY }}',
+                  readAccessToken: '${{ secrets.TMDB_READ_ACCESS_TOKEN }}',
+                  baseUrl: 'https://api.themoviedb.org/3',
+                  imageBaseUrl: 'https://image.tmdb.org/t/p/w500'
+              },
+              app: {
+                  sessionTimeout: 3600000,
+                  maxLoginAttempts: 5,
+                  cacheExpiration: 300000
+              }
           };
+          
+          if (typeof module !== 'undefined' && module.exports) {
+              module.exports = CONFIG;
+          }
           EOF
 
       - name: Setup Pages
