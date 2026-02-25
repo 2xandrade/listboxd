@@ -27,6 +27,8 @@ O Letterboxd Manager é um sistema web simplificado para uso privativo que permi
 3. WHEN the Admin removes a user THEN the System SHALL delete the user account and revoke access
 4. WHEN the Admin updates a user THEN the System SHALL modify the user credentials
 5. THE System SHALL store user credentials securely with password hashing
+6. WHEN no users exist in the system THEN the System SHALL create a default admin user with username "admin" and password "admin"
+7. WHEN accessing the system from a new machine THEN the System SHALL allow login with the default admin credentials
 
 ### Requirement 2
 
@@ -144,12 +146,13 @@ O Letterboxd Manager é um sistema web simplificado para uso privativo que permi
 #### Acceptance Criteria
 
 1. WHEN a User accesses the shared list tab THEN the System SHALL display filter options
-2. WHEN a User selects a genre filter THEN the System SHALL display only films matching that genre
-3. WHEN a User enters a name filter THEN the System SHALL display only films whose titles contain the search text
-4. WHEN a User selects random filter THEN the System SHALL display films in random order
-5. WHEN a User applies multiple filters THEN the System SHALL display films matching all selected criteria
-6. WHEN a User clears filters THEN the System SHALL display all films in the shared list
-7. THE System SHALL update the displayed list immediately when filters are changed
+2. WHEN a User selects a genre filter THEN the System SHALL display films that have at least one matching genre
+3. WHEN a film has multiple genres and at least one matches the filter THEN the System SHALL include that film in the results
+4. WHEN a User enters a name filter THEN the System SHALL display only films whose titles contain the search text
+5. WHEN a User selects random filter THEN the System SHALL display films in random order
+6. WHEN a User applies multiple filters THEN the System SHALL display films matching all selected criteria
+7. WHEN a User clears filters THEN the System SHALL display all films in the shared list
+8. THE System SHALL update the displayed list immediately when filters are changed
 
 ### Requirement 12
 
@@ -198,11 +201,12 @@ O Letterboxd Manager é um sistema web simplificado para uso privativo que permi
 #### Acceptance Criteria
 
 1. WHEN a User accesses the watched films tab THEN the System SHALL display filter options
-2. WHEN a User applies a genre filter in watched films THEN the System SHALL display only watched films matching that genre
-3. WHEN a User applies a name filter in watched films THEN the System SHALL display only watched films whose titles contain the search text
-4. WHEN a User applies random order in watched films THEN the System SHALL display watched films in random order
-5. WHEN a User applies multiple filters in watched films THEN the System SHALL display watched films matching all criteria
-6. WHEN a User clears filters in watched films THEN the System SHALL display all watched films
+2. WHEN a User applies a genre filter in watched films THEN the System SHALL display watched films that have at least one matching genre
+3. WHEN a watched film has multiple genres and at least one matches the filter THEN the System SHALL include that film in the results
+4. WHEN a User applies a name filter in watched films THEN the System SHALL display only watched films whose titles contain the search text
+5. WHEN a User applies random order in watched films THEN the System SHALL display watched films in random order
+6. WHEN a User applies multiple filters in watched films THEN the System SHALL display watched films matching all criteria
+7. WHEN a User clears filters in watched films THEN the System SHALL display all watched films
 
 ### Requirement 16
 
@@ -215,3 +219,27 @@ O Letterboxd Manager é um sistema web simplificado para uso privativo que permi
 3. WHEN a film is removed from the shared list THEN the System SHALL change the remove button back to an add button
 4. WHEN displaying films in explore tab THEN the System SHALL indicate which films are already in the shared list
 5. THE System SHALL update button states immediately after adding or removing films
+
+### Requirement 17
+
+**User Story:** Como usuário, eu quero uma interface visualmente atraente e intuitiva, para que eu tenha uma experiência agradável ao usar o sistema.
+
+#### Acceptance Criteria
+
+1. WHEN displaying the rating and review modal THEN the System SHALL present a visually appealing design with clear typography and spacing
+2. WHEN a User interacts with UI elements THEN the System SHALL provide smooth transitions and visual feedback
+3. WHEN displaying film information THEN the System SHALL use a clean and organized layout with proper visual hierarchy
+4. WHEN a User navigates between sections THEN the System SHALL maintain consistent design patterns and styling
+5. THE System SHALL follow modern UX principles including proper contrast, readability, and accessibility
+
+### Requirement 18
+
+**User Story:** Como usuário, eu quero que as sinopses dos filmes sejam exibidas corretamente, para que eu possa ler informações completas sobre cada filme.
+
+#### Acceptance Criteria
+
+1. WHEN fetching film data from TMDB API THEN the System SHALL request the overview field in the correct language
+2. WHEN parsing film data THEN the System SHALL correctly extract and store the overview field
+3. WHEN displaying film details THEN the System SHALL show the complete synopsis without truncation
+4. WHEN the overview field is empty or unavailable THEN the System SHALL display a clear message indicating no synopsis is available
+5. THE System SHALL handle different text encodings and special characters in synopses correctly

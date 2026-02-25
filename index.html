@@ -164,6 +164,44 @@
                 </div>
             </div>
         </div>
+
+        <!-- Rating Modal -->
+        <div id="rating-modal" class="modal rating-modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content rating-modal-content">
+                <button class="modal-close" aria-label="Fechar">&times;</button>
+                <div class="rating-modal-body">
+                    <h2 class="rating-modal-title">Avaliar Filme</h2>
+                    <p class="rating-modal-subtitle">Como foi a experiência?</p>
+                    
+                    <div class="rating-stars-container">
+                        <div class="rating-stars" id="rating-stars">
+                            <button class="star-btn empty" data-star="1" aria-label="Estrela 1">★</button>
+                            <button class="star-btn empty" data-star="2" aria-label="Estrela 2">★</button>
+                            <button class="star-btn empty" data-star="3" aria-label="Estrela 3">★</button>
+                            <button class="star-btn empty" data-star="4" aria-label="Estrela 4">★</button>
+                            <button class="star-btn empty" data-star="5" aria-label="Estrela 5">★</button>
+                        </div>
+                        <p class="rating-label" id="rating-label">Selecione uma avaliação</p>
+                    </div>
+                    
+                    <div class="review-container">
+                        <label for="review-input" class="review-label">Review (opcional)</label>
+                        <textarea 
+                            id="review-input" 
+                            class="review-input" 
+                            placeholder="Compartilhe seus pensamentos sobre o filme..."
+                            rows="4"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="rating-modal-actions">
+                        <button id="rating-cancel-btn" class="rating-btn rating-cancel-btn">Cancelar</button>
+                        <button id="rating-submit-btn" class="rating-btn rating-submit-btn" disabled>Confirmar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>

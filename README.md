@@ -175,14 +175,15 @@ No primeiro acesso, você precisa criar um usuário administrador manualmente at
 const userService = new UserService();
 
 // Criar usuário admin
-const adminUser = userService.createUser('admin', 'senha123', true);
+const passwordHash = authService.hashPassword('admin');
+const adminUser = userService.createUser('admin', passwordHash, true);
 
 console.log('Usuário admin criado:', adminUser);
 ```
 
 4. Agora você pode fazer login com:
    - **Username**: `admin`
-   - **Password**: `senha123`
+   - **Password**: `admin`
 
 5. **IMPORTANTE**: Após o primeiro login, vá para a página de administração e altere a senha padrão!
 
@@ -203,15 +204,19 @@ Você também pode criar um arquivo HTML temporário para inicialização:
 
     <script src="js/storage.js"></script>
     <script src="js/users.js"></script>
+    <script src="js/auth.js"></script>
     <script>
         function createAdmin() {
-            const userService = new UserService();
+            const storageManager = new StorageManager();
+            const userService = new UserService(storageManager);
+            const authService = new AuthService(storageManager, userService);
             try {
-                const admin = userService.createUser('admin', 'senha123', true);
+                const passwordHash = authService.hashPassword('admin');
+                const admin = userService.createUser('admin', passwordHash, true);
                 document.getElementById('result').innerHTML = 
                     '<p style="color: green;">Admin criado com sucesso!</p>' +
                     '<p>Username: admin</p>' +
-                    '<p>Password: senha123</p>' +
+                    '<p>Password: admin</p>' +
                     '<p><strong>Altere a senha após o primeiro login!</strong></p>';
             } catch (error) {
                 document.getElementById('result').innerHTML = 
@@ -227,63 +232,78 @@ Salve como `setup-admin.html`, abra no navegador, clique no botão e depois dele
 
 ## 🚀 Deploy no GitHub Pages
 
-### Opção 1: Deploy Direto da Branch Main
+### ⚠️ Importante: Segurança da API Key
 
-1. Faça push do seu código para o GitHub:
+A API key do TMDB **NÃO DEVE** ser exposta publicamente no código. Para hospedar no GitHub Pages com segurança, usamos **GitHub Actions** com **Secrets**.
 
-```bash
-git add .
-git commit -m "Initial commit"
-git push origin main
+### Passo 1: Obter API Key do TMDB
+
+1. Acesse [https://www.themoviedb.org/settings/api](https://www.themoviedb.org/settings/api)
+2. Crie uma conta se ainda não tiver
+3. Solicite uma API Key (escolha a opção "Developer")
+4. Copie sua **API Key (v3 auth)**
+
+### Passo 2: Configurar Secret no GitHub
+
+1. Vá no seu repositório no GitHub
+2. Clique em **Settings** → **Secrets and variables** → **Actions**
+3. Clique em **New repository secret**
+4. Configure:
+   - **Name**: `TMDB_API_KEY`
+   - **Secret**: Cole sua API key do TMDB
+5. Clique em **Add secret**
+
+### Passo 3: Habilitar GitHub Pages
+
+1. Vá em **Settings** → **Pages**
+2. Em **Source**, selecione **GitHub Actions**
+3. Salve as configurações
+
+### Passo 4: Deploy Automático
+
+O arquivo `.github/workflows/deploy.yml` já está configurado. Quando você fizer push para a branch `main`:
+
+1. O GitHub Actions irá automaticamente:
+   - ✅ Instalar dependências
+   - ✅ Executar todos os testes
+   - ✅ Criar o arquivo `config.js` com sua API key (de forma segura)
+   - ✅ Fazer deploy no GitHub Pages
+
+2. Aguarde alguns minutos e acesse: `https://seu-usuario.github.io/letterboxd-manager/`
+
+### Como Funciona a Segurança
+
+- ✅ A API key fica armazenada como **Secret** no GitHub (criptografada)
+- ✅ O código-fonte no repositório **nunca** contém a API key
+- ✅ O GitHub Actions injeta a key apenas durante o build
+- ✅ Apenas você (dono do repositório) tem acesso ao Secret
+- ✅ O arquivo `config.js` é gerado automaticamente no deploy
+
+### Primeiro Acesso Após Deploy
+
+Após o deploy, você precisará criar o usuário admin:
+
+1. Acesse a URL do GitHub Pages
+2. Abra o Console do Desenvolvedor (F12)
+3. Execute:
+
+```javascript
+// A aplicação cria automaticamente um usuário admin padrão
+// Username: admin
+// Password: admin
 ```
 
-2. No repositório do GitHub, vá para **Settings** → **Pages**
+4. Faça login e **altere a senha imediatamente**!
 
-3. Em **Source**, selecione:
-   - Branch: `main`
-   - Folder: `/ (root)`
+### Opção Alternativa: Deploy Manual (Não Recomendado)
 
-4. Clique em **Save**
+Se preferir não usar GitHub Actions, você pode fazer deploy manual, mas **NUNCA** commite o arquivo `config.js` com sua API key:
 
-5. Aguarde alguns minutos e acesse: `https://seu-usuario.github.io/letterboxd-manager/`
+1. Crie uma branch `gh-pages`
+2. Adicione o `config.js` manualmente após o deploy
+3. Configure GitHub Pages para usar a branch `gh-pages`
 
-### Opção 2: Deploy da Pasta docs
-
-1. Crie uma pasta `docs` e mova todos os arquivos para lá:
-
-```bash
-mkdir docs
-cp -r *.html css js docs/
-cp config.example.js docs/
-```
-
-2. Atualize o `.gitignore` para excluir `docs/config.js`:
-
-```
-docs/config.js
-```
-
-3. Faça commit e push:
-
-```bash
-git add .
-git commit -m "Setup docs folder for GitHub Pages"
-git push origin main
-```
-
-4. No GitHub, vá para **Settings** → **Pages** e selecione:
-   - Branch: `main`
-   - Folder: `/docs`
-
-### Configuração Pós-Deploy
-
-Após o deploy, você precisará:
-
-1. Acessar a URL do GitHub Pages
-2. Abrir o console e criar o usuário admin (veja seção anterior)
-3. Fazer login e começar a usar
-
-**⚠️ NOTA DE SEGURANÇA**: Como a aplicação usa localStorage, os dados são armazenados localmente no navegador. Para uso em produção real, considere implementar um backend com banco de dados.
+⚠️ **Esta opção é menos segura e não recomendada!**
 
 ## 📁 Estrutura do Projeto
 

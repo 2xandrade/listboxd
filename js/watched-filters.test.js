@@ -333,6 +333,146 @@ describe('FilterManager - Watched Films Property Tests', () => {
         { numRuns: 100 }
       );
     });
+
+    /**
+     * Feature: letterboxd-manager, Property 49: Watched films genre filter with multiple genres
+     * Validates: Requirements 15.2, 15.3
+     * 
+     * For any genre and watched list, when a genre filter is applied,
+     * all watched films that have at least one matching genre should be displayed.
+     * This explicitly tests that watched films with multiple genres are correctly filtered.
+     */
+    it('should match watched films with multiple genres when at least one genre matches', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 5, maxLength: 20 }),
+          fc.string({ minLength: 3, maxLength: 15 }),
+          fc.constantFrom('Action', 'Drama', 'Comedy', 'Thriller', 'Horror'),
+          (userId, username, selectedGenre) => {
+            // Create watched films with specific genre combinations
+            const watchedFilms = [
+              // Film with only the selected genre
+              {
+                id: 'watched-1',
+                film: {
+                  id: 1,
+                  title: 'Single Genre Film',
+                  poster: 'http://test.com/poster1.jpg',
+                  rating: 7.5,
+                  genres: [selectedGenre],
+                  year: 2020,
+                  overview: 'A film with one genre',
+                  tmdbUrl: 'http://test.com/1'
+                },
+                rating: 4.0,
+                ratedBy: username,
+                ratedByUserId: userId,
+                watchedAt: Date.now(),
+                review: 'Great movie'
+              },
+              // Film with selected genre + other genres
+              {
+                id: 'watched-2',
+                film: {
+                  id: 2,
+                  title: 'Multi Genre Film 1',
+                  poster: 'http://test.com/poster2.jpg',
+                  rating: 8.0,
+                  genres: [selectedGenre, 'Sci-Fi', 'Fantasy'],
+                  year: 2021,
+                  overview: 'A film with multiple genres',
+                  tmdbUrl: 'http://test.com/2'
+                },
+                rating: 4.5,
+                ratedBy: username,
+                ratedByUserId: userId,
+                watchedAt: Date.now(),
+                review: 'Amazing film'
+              },
+              // Film with selected genre at the end
+              {
+                id: 'watched-3',
+                film: {
+                  id: 3,
+                  title: 'Multi Genre Film 2',
+                  poster: 'http://test.com/poster3.jpg',
+                  rating: 7.8,
+                  genres: ['Romance', 'Mystery', selectedGenre],
+                  year: 2019,
+                  overview: 'Another multi-genre film',
+                  tmdbUrl: 'http://test.com/3'
+                },
+                rating: 3.5,
+                ratedBy: username,
+                ratedByUserId: userId,
+                watchedAt: Date.now(),
+                review: 'Good movie'
+              },
+              // Film without the selected genre
+              {
+                id: 'watched-4',
+                film: {
+                  id: 4,
+                  title: 'Different Genre Film',
+                  poster: 'http://test.com/poster4.jpg',
+                  rating: 6.5,
+                  genres: ['Western', 'Adventure'],
+                  year: 2018,
+                  overview: 'A different genre film',
+                  tmdbUrl: 'http://test.com/4'
+                },
+                rating: 3.0,
+                ratedBy: username,
+                ratedByUserId: userId,
+                watchedAt: Date.now(),
+                review: 'Okay film'
+              },
+              // Film with multiple genres but not the selected one
+              {
+                id: 'watched-5',
+                film: {
+                  id: 5,
+                  title: 'Other Multi Genre Film',
+                  poster: 'http://test.com/poster5.jpg',
+                  rating: 7.2,
+                  genres: ['Animation', 'Family', 'Musical'],
+                  year: 2022,
+                  overview: 'Yet another multi-genre film',
+                  tmdbUrl: 'http://test.com/5'
+                },
+                rating: 4.0,
+                ratedBy: username,
+                ratedByUserId: userId,
+                watchedAt: Date.now(),
+                review: 'Fun movie'
+              }
+            ];
+            
+            // Apply genre filter
+            const filtered = filterManager.filterByGenre(watchedFilms, selectedGenre);
+            
+            // Should return exactly 3 films (the ones with selectedGenre)
+            expect(filtered.length).toBe(3);
+            
+            // All returned films should have the selected genre
+            for (const watchedFilm of filtered) {
+              expect(watchedFilm.film.genres).toBeDefined();
+              expect(Array.isArray(watchedFilm.film.genres)).toBe(true);
+              
+              const hasGenre = watchedFilm.film.genres.some(g => 
+                g.toLowerCase() === selectedGenre.toLowerCase()
+              );
+              expect(hasGenre).toBe(true);
+            }
+            
+            // Verify the correct films were returned
+            const filteredIds = filtered.map(wf => wf.film.id).sort();
+            expect(filteredIds).toEqual([1, 2, 3]);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
   });
 
   /**

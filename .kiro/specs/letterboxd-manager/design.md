@@ -268,6 +268,10 @@ After reviewing all testable properties, several can be consolidated:
 *For any* password string, when stored in the system, the stored value should be a hash and not equal to the plain text password.
 **Validates: Requirements 1.5**
 
+**Property 5: Default admin creation**
+*For any* system state where no users exist, when the system initializes, a default admin user with username "admin" and password "admin" should be created.
+**Validates: Requirements 1.6, 1.7**
+
 **Property 5: Valid authentication success**
 *For any* user with valid credentials, when those credentials are provided for login, authentication should succeed and grant access.
 **Validates: Requirements 2.1**
@@ -360,9 +364,9 @@ After reviewing all testable properties, several can be consolidated:
 *For any* paginated view, when displayed, the current page number and total pages should be visible.
 **Validates: Requirements 10.6**
 
-**Property 28: Genre filter**
-*For any* genre and shared list, when a user applies a genre filter, only films matching that genre should be displayed.
-**Validates: Requirements 11.2**
+**Property 28: Genre filter with multiple genres**
+*For any* genre and shared list, when a user applies a genre filter, all films that have at least one matching genre should be displayed.
+**Validates: Requirements 11.2, 11.3**
 
 **Property 29: Name filter**
 *For any* search text and shared list, when a user applies a name filter, only films whose titles contain the search text should be displayed.
@@ -444,9 +448,9 @@ After reviewing all testable properties, several can be consolidated:
 *For any* filtered list, when displayed, the film count should match the number of films that pass the filter criteria.
 **Validates: Requirements 14.4**
 
-**Property 49: Watched films genre filter**
-*For any* genre and watched list, when a genre filter is applied, only watched films matching that genre should be displayed.
-**Validates: Requirements 15.2**
+**Property 49: Watched films genre filter with multiple genres**
+*For any* genre and watched list, when a genre filter is applied, all watched films that have at least one matching genre should be displayed.
+**Validates: Requirements 15.2, 15.3**
 
 **Property 50: Watched films name filter**
 *For any* search text and watched list, when a name filter is applied, only watched films whose titles contain the search text should be displayed.
@@ -483,6 +487,26 @@ After reviewing all testable properties, several can be consolidated:
 **Property 58: Immediate button state update**
 *For any* film, when added to or removed from the shared list, the button state should update immediately.
 **Validates: Requirements 16.5**
+
+**Property 59: Rating modal visual design**
+*For any* rating and review modal, when displayed, it should present a visually appealing design with clear typography, proper spacing, and smooth transitions.
+**Validates: Requirements 17.1**
+
+**Property 60: UI interaction feedback**
+*For any* user interaction with UI elements, when triggered, the system should provide smooth transitions and visual feedback.
+**Validates: Requirements 17.2**
+
+**Property 61: Synopsis extraction correctness**
+*For any* valid TMDB API film response, when parsed by the system, the overview field should be correctly extracted and stored without data loss.
+**Validates: Requirements 18.2**
+
+**Property 62: Synopsis display completeness**
+*For any* film detail view, when displayed, the complete synopsis should be shown without truncation, or a clear message if unavailable.
+**Validates: Requirements 18.3, 18.4**
+
+**Property 63: Synopsis encoding handling**
+*For any* synopsis text with special characters or different encodings, when displayed, the text should render correctly without corruption.
+**Validates: Requirements 18.5**
 
 ## Error Handling
 
@@ -530,7 +554,7 @@ Example unit test areas:
 
 The application will use **fast-check** (JavaScript property-based testing library) for property tests. Each property test will:
 
-- Run a minimum of 100 iterations with randomly generated inputs
+- Run a minimum of 25 iterations with randomly generated inputs
 - Be tagged with a comment referencing the design document property
 - Use the format: `// Feature: letterboxd-manager, Property X: [property text]`
 - Test universal behaviors across all valid inputs

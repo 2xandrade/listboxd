@@ -41,6 +41,9 @@ describe('ListService - Property-Based Tests', () => {
   // Generator for user IDs
   const userIdArb = fc.string({ minLength: 5, maxLength: 30 });
 
+  // Generator for half-star ratings (0.5 to 5 in 0.5 increments)
+  const halfStarRatingArb = fc.integer({ min: 1, max: 10 }).map(n => n * 0.5);
+
   beforeEach(() => {
     // Create fresh instances before each test
     storageManager = new StorageManager();
@@ -613,7 +616,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -669,7 +672,7 @@ describe('ListService - Property-Based Tests', () => {
               film: filmArb,
               addUserId: userIdArb,
               addUsername: usernameArb,
-              rating: fc.float({ min: 1, max: 5, noNaN: true }),
+              rating: halfStarRatingArb,
               watchUserId: userIdArb,
               watchUsername: usernameArb,
               review: fc.string({ maxLength: 200 })
@@ -728,7 +731,7 @@ describe('ListService - Property-Based Tests', () => {
       fc.assert(
         fc.property(
           fc.integer({ min: 1, max: 1000000 }),
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           (filmId, rating, userId, username) => {
@@ -790,15 +793,15 @@ describe('ListService - Property-Based Tests', () => {
       );
     });
 
-    it('should validate rating is within valid range (1-5)', () => {
+    it('should validate rating is within valid range (0.5-5)', () => {
       fc.assert(
         fc.property(
           filmArb,
           userIdArb,
           usernameArb,
           fc.oneof(
-            fc.float({ max: Math.fround(0.99), noNaN: true }),
-            fc.float({ min: Math.fround(10.01), noNaN: true })
+            fc.float({ max: Math.fround(0.49), noNaN: true }),
+            fc.float({ min: Math.fround(5.01), noNaN: true })
           ),
           userIdArb,
           usernameArb,
@@ -812,7 +815,7 @@ describe('ListService - Property-Based Tests', () => {
             // Attempt to mark as watched with invalid rating should fail
             expect(() => {
               listService.markAsWatched(film.id, invalidRating, watchUserId, watchUsername, '', true);
-            }).toThrow('Rating must be a number between 1 and 5');
+            }).toThrow('Rating must be a number between 0.5 and 5 in 0.5 increments');
             
             // Film should still be in shared list
             expect(listService.getSharedList().length).toBe(1);
@@ -829,7 +832,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           (film, addUserId, addUsername, validRating, watchUserId, watchUsername) => {
@@ -876,7 +879,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           (film, addUserId, addUsername, rating, watchUserId, watchUsername) => {
@@ -909,7 +912,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           (film, addUserId, addUsername, rating, watchUserId, watchUsername) => {
@@ -948,7 +951,7 @@ describe('ListService - Property-Based Tests', () => {
               film: filmArb,
               addUserId: userIdArb,
               addUsername: usernameArb,
-              rating: fc.float({ min: 1, max: 5, noNaN: true }),
+              rating: halfStarRatingArb,
               watchUserId: userIdArb,
               watchUsername: usernameArb
             }),
@@ -1001,7 +1004,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           usernameArb,
           fc.string({ minLength: 8, maxLength: 20 }),
           fc.string({ maxLength: 200 }),
@@ -1042,7 +1045,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           usernameArb,
           fc.string({ minLength: 8, maxLength: 20 }),
           fc.string({ maxLength: 200 }),
@@ -1084,7 +1087,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           (film, addUserId, addUsername, rating, watchUserId, watchUsername) => {
@@ -1121,7 +1124,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           (film, addUserId, addUsername, rating, watchUserId, watchUsername) => {
@@ -1166,7 +1169,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -1214,7 +1217,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -1254,7 +1257,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           (film, addUserId, addUsername, rating, watchUserId, watchUsername) => {
@@ -1293,7 +1296,7 @@ describe('ListService - Property-Based Tests', () => {
               film: filmArb,
               addUserId: userIdArb,
               addUsername: usernameArb,
-              rating: fc.float({ min: 1, max: 5, noNaN: true }),
+              rating: halfStarRatingArb,
               watchUserId: userIdArb,
               watchUsername: usernameArb,
               review: fc.string({ maxLength: 200 })
@@ -1352,10 +1355,10 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           (film, addUserId, addUsername, initialRating, watchUserId, watchUsername, newRating) => {
             // Clear storage at the start of each iteration
             localStorage.clear();
@@ -1397,10 +1400,10 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           (film, addUserId, addUsername, initialRating, watchUserId, watchUsername, newRating) => {
             // Clear storage at the start of each iteration
             localStorage.clear();
@@ -1441,12 +1444,12 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.oneof(
-            fc.float({ max: Math.fround(0.99), noNaN: true }),
-            fc.float({ min: Math.fround(10.01), noNaN: true })
+            fc.float({ max: Math.fround(0.49), noNaN: true }),
+            fc.float({ min: Math.fround(5.01), noNaN: true })
           ),
           (film, addUserId, addUsername, initialRating, watchUserId, watchUsername, invalidRating) => {
             // Clear storage at the start of each iteration
@@ -1470,7 +1473,7 @@ describe('ListService - Property-Based Tests', () => {
                 invalidRating,
                 true // isAdmin = true
               );
-            }).toThrow('Rating must be a number between 1 and 5');
+            }).toThrow('Rating must be a number between 0.5 and 5 in 0.5 increments');
             
             // Rating should remain unchanged
             const watchedList = listService.getWatchedList();
@@ -1490,8 +1493,8 @@ describe('ListService - Property-Based Tests', () => {
               film: filmArb,
               addUserId: userIdArb,
               addUsername: usernameArb,
-              initialRating: fc.float({ min: 1, max: 5, noNaN: true }),
-              newRating: fc.float({ min: 1, max: 5, noNaN: true }),
+              initialRating: halfStarRatingArb,
+              newRating: halfStarRatingArb,
               watchUserId: userIdArb,
               watchUsername: usernameArb
             }),
@@ -1555,7 +1558,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -1601,7 +1604,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -1646,7 +1649,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ minLength: 1, maxLength: 200 }),
@@ -1693,7 +1696,7 @@ describe('ListService - Property-Based Tests', () => {
               film: filmArb,
               addUserId: userIdArb,
               addUsername: usernameArb,
-              rating: fc.float({ min: 1, max: 5, noNaN: true }),
+              rating: halfStarRatingArb,
               initialReview: fc.string({ maxLength: 200 }),
               newReview: fc.string({ maxLength: 200 }),
               watchUserId: userIdArb,
@@ -1757,11 +1760,14 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           (film, addUserId, addUsername, initialRating, watchUserId, watchUsername, newRating) => {
+            // Skip if ratings are the same
+            fc.pre(initialRating !== newRating);
+            
             // Clear storage at the start of each iteration
             localStorage.clear();
             
@@ -1804,11 +1810,11 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           (film, addUserId, addUsername, initialRating, watchUserId, watchUsername, review, newRating) => {
             // Clear storage at the start of each iteration
             localStorage.clear();
@@ -1856,10 +1862,10 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
-          fc.array(fc.float({ min: 1, max: 5, noNaN: true }), { minLength: 2, maxLength: 5 }),
+          fc.array(halfStarRatingArb, { minLength: 2, maxLength: 5 }),
           (film, addUserId, addUsername, initialRating, watchUserId, watchUsername, ratingUpdates) => {
             // Clear storage at the start of each iteration
             localStorage.clear();
@@ -1906,8 +1912,8 @@ describe('ListService - Property-Based Tests', () => {
               film: filmArb,
               addUserId: userIdArb,
               addUsername: usernameArb,
-              initialRating: fc.float({ min: 1, max: 5, noNaN: true }),
-              newRating: fc.float({ min: 1, max: 5, noNaN: true }),
+              initialRating: halfStarRatingArb,
+              newRating: halfStarRatingArb,
               watchUserId: userIdArb,
               watchUsername: usernameArb
             }),
@@ -1975,7 +1981,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -2026,7 +2032,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -2078,7 +2084,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -2129,7 +2135,7 @@ describe('ListService - Property-Based Tests', () => {
               film: filmArb,
               addUserId: userIdArb,
               addUsername: usernameArb,
-              rating: fc.float({ min: 1, max: 5, noNaN: true }),
+              rating: halfStarRatingArb,
               initialReview: fc.string({ maxLength: 200 }),
               newReview: fc.string({ maxLength: 200 }),
               watchUserId: userIdArb,
@@ -2190,7 +2196,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ minLength: 1, maxLength: 200 }),
@@ -2249,7 +2255,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -2295,7 +2301,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -2340,7 +2346,7 @@ describe('ListService - Property-Based Tests', () => {
               film: filmArb,
               addUserId: userIdArb,
               addUsername: usernameArb,
-              rating: fc.float({ min: 1, max: 5, noNaN: true }),
+              rating: halfStarRatingArb,
               watchUserId: userIdArb,
               watchUsername: usernameArb,
               review: fc.string({ maxLength: 200 })
@@ -2422,7 +2428,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -2466,7 +2472,7 @@ describe('ListService - Property-Based Tests', () => {
               film: filmArb,
               addUserId: userIdArb,
               addUsername: usernameArb,
-              rating: fc.float({ min: 1, max: 5, noNaN: true }),
+              rating: halfStarRatingArb,
               watchUserId: userIdArb,
               watchUsername: usernameArb,
               review: fc.string({ maxLength: 200 })
@@ -2526,11 +2532,11 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           fc.string({ maxLength: 200 }),
           (film, addUserId, addUsername, rating1, watchUserId, watchUsername, review1, rating2, review2) => {
             // Clear storage at the start of each iteration
@@ -2613,10 +2619,10 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           (film, addUserId, addUsername, initialRating, watchUserId, watchUsername, newRating) => {
             // Clear storage at the start of each iteration
             localStorage.clear();
@@ -2656,7 +2662,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -2700,7 +2706,7 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
@@ -2743,11 +2749,11 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           fc.string({ maxLength: 200 }),
           (film, addUserId, addUsername, rating, watchUserId, watchUsername, review, newRating, newReview) => {
             // Clear storage at the start of each iteration
@@ -2794,11 +2800,11 @@ describe('ListService - Property-Based Tests', () => {
           filmArb,
           userIdArb,
           usernameArb,
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           userIdArb,
           usernameArb,
           fc.string({ maxLength: 200 }),
-          fc.float({ min: 1, max: 5, noNaN: true }),
+          halfStarRatingArb,
           fc.string({ maxLength: 200 }),
           (film, addUserId, addUsername, rating, watchUserId, watchUsername, review, newRating, newReview) => {
             // Clear storage at the start of each iteration

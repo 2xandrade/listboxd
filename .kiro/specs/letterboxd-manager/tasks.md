@@ -599,3 +599,74 @@
   - Documentar filtros em ambas as abas
   - Documentar botão dinâmico de adicionar/remover
   - _Requirements: 12.7, 13.1-13.7, 14.1-14.4, 15.1-15.6, 16.1-16.5_
+
+- [x] 36. Atualizar sistema de login padrão
+  - Modificar função initializeDefaultUser para criar usuário com senha "admin" ao invés de "admin123"
+  - Atualizar mensagens de console para refletir a nova senha padrão
+  - Atualizar documentação sobre credenciais padrão
+  - _Requirements: 1.6, 1.7_
+
+- [x] 36.1 Escrever teste de propriedade para criação de admin padrão
+  - **Property 5: Default admin creation**
+  - **Validates: Requirements 1.6, 1.7**
+
+- [x] 37. Corrigir filtro de gêneros para suportar múltiplos gêneros
+  - Atualizar método filterByGenre no filters.js para verificar se pelo menos um gênero corresponde
+  - Modificar lógica de comparação para usar array.some() ao invés de igualdade exata
+  - Testar com filmes que têm múltiplos gêneros
+  - _Requirements: 11.2, 11.3, 15.2, 15.3_
+
+- [x] 37.1 Escrever teste de propriedade para filtro de gênero com múltiplos gêneros
+  - **Property 28: Genre filter with multiple genres**
+  - **Validates: Requirements 11.2, 11.3**
+
+- [x] 37.2 Escrever teste de propriedade para filtro de gênero em filmes assistidos com múltiplos gêneros
+  - **Property 49: Watched films genre filter with multiple genres**
+  - **Validates: Requirements 15.2, 15.3**
+
+- [x] 38. Melhorar design do modal de avaliação e review
+  - Redesenhar modal de rating com melhor espaçamento e tipografia
+  - Adicionar transições suaves ao abrir/fechar modal
+  - Melhorar visualização de estrelas (tamanho, cor, espaçamento)
+  - Adicionar campo de review com melhor formatação
+  - Implementar feedback visual ao selecionar estrelas
+  - Adicionar animações sutis para melhorar UX
+  - _Requirements: 17.1, 17.2_
+
+- [x] 38.1 Escrever teste de propriedade para design visual do modal
+  - **Property 59: Rating modal visual design**
+  - **Validates: Requirements 17.1**
+
+- [x] 38.2 Escrever teste de propriedade para feedback de interação
+  - **Property 60: UI interaction feedback**
+  - **Validates: Requirements 17.2**
+
+
+
+- [x] 40. Melhorar UI/UX geral da aplicação
+  - Revisar e melhorar paleta de cores para melhor contraste
+  - Adicionar mais espaçamento e breathing room nos elementos
+  - Melhorar tipografia (tamanhos, pesos, hierarquia)
+  - Adicionar transições suaves em hover states
+  - Melhorar responsividade em diferentes tamanhos de tela
+  - Adicionar estados de loading mais elegantes
+  - Melhorar feedback visual de botões e interações
+  - Garantir consistência de design em todas as seções
+  - _Requirements: 17.3, 17.4, 17.5_
+
+- [ ] 41. Checkpoint final - Garantir que todos os testes passam
+  - Executar todos os testes com `npm test`
+  - Verificar que não há erros de console no browser
+  - Testar login com credenciais padrão (admin/admin)
+  - Testar filtros de gênero com filmes de múltiplos gêneros
+  - Testar modal de rating e review
+  - Testar exibição de sinopses
+  - Verificar melhorias de UI/UX em diferentes dispositivos
+  - Perguntar ao usuário se há dúvidas ou problemas
+
+- [ ] 42. Atualizar documentação com novas mudanças
+  - Atualizar README.md com credenciais padrão (admin/admin)
+  - Documentar correção de filtros de gênero
+  - Documentar melhorias de UI/UX
+  - Adicionar troubleshooting para problemas de sinopse
+  - _Requirements: 1.6, 1.7, 11.2, 11.3, 17.1-17.5, 18.1-18.5_

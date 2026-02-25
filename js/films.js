@@ -152,6 +152,9 @@ class FilmService {
       genres = this.getGenreNames(tmdbFilm.genre_ids);
     }
 
+    // Extract overview
+    const overview = tmdbFilm.overview || '';
+
     return {
       id: tmdbFilm.id,
       title: tmdbFilm.title || tmdbFilm.original_title || 'Unknown Title',
@@ -163,7 +166,7 @@ class FilmService {
       year: tmdbFilm.release_date 
         ? new Date(tmdbFilm.release_date).getFullYear() 
         : null,
-      overview: tmdbFilm.overview || '',
+      overview: overview,
       tmdbUrl: `https://www.themoviedb.org/movie/${tmdbFilm.id}`
     };
   }

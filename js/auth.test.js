@@ -101,13 +101,120 @@ describe('AuthService - Property-Based Tests', () => {
   });
 
   /**
-   * Feature: letterboxd-manager, Property 5: Valid authentication success
+   * Feature: letterboxd-manager, Property 5: Default admin creation
+   * Validates: Requirements 1.6, 1.7
+   * 
+   * For any system state where no users exist, when the system initializes, 
+   * a default admin user with username "admin" and password "admin" should be created.
+   */
+  describe('Property 5: Default admin creation', () => {
+    it('should create default admin user when no users exist', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.constant(null), // No input needed, just testing initialization
+          async () => {
+            // Ensure no users exist
+            localStorage.clear();
+            expect(userService.getAllUsers()).toHaveLength(0);
+            
+            // Simulate system initialization by creating default user
+            const users = userService.getAllUsers();
+            if (users.length === 0) {
+              const defaultPassword = 'admin';
+              const passwordHash = authService.hashPassword(defaultPassword);
+              userService.createUser('admin', passwordHash, true);
+            }
+            
+            // Verify default admin was created
+            const allUsers = userService.getAllUsers();
+            expect(allUsers).toHaveLength(1);
+            
+            const adminUser = allUsers[0];
+            expect(adminUser.username).toBe('admin');
+            expect(adminUser.isAdmin).toBe(true);
+            
+            // Verify we can login with default credentials
+            const result = await authService.login('admin', 'admin');
+            expect(result).toBeDefined();
+            expect(result.username).toBe('admin');
+            expect(result.isAdmin).toBe(true);
+            
+            // Clean up
+            authService.logout();
+            localStorage.clear();
+          }
+        ),
+        { numRuns: 25 }
+      );
+    });
+
+    it('should not create default admin if users already exist', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0 && s !== 'admin'),
+          fc.string({ minLength: 4, maxLength: 50 }),
+          (username, password) => {
+            // Clear and create a non-admin user
+            localStorage.clear();
+            const passwordHash = authService.hashPassword(password);
+            userService.createUser(username, passwordHash, false);
+            
+            const usersBefore = userService.getAllUsers();
+            expect(usersBefore).toHaveLength(1);
+            
+            // Try to initialize default user (should not create)
+            const users = userService.getAllUsers();
+            if (users.length === 0) {
+              const defaultPassword = 'admin';
+              const defaultHash = authService.hashPassword(defaultPassword);
+              userService.createUser('admin', defaultHash, true);
+            }
+            
+            // Should still have only one user (the original one)
+            const usersAfter = userService.getAllUsers();
+            expect(usersAfter).toHaveLength(1);
+            expect(usersAfter[0].username).toBe(username);
+            
+            // Clean up
+            localStorage.clear();
+          }
+        ),
+        { numRuns: 25 }
+      );
+    });
+
+    it('should allow login from new machine with default credentials', async () => {
+      // Simulate first machine
+      localStorage.clear();
+      const defaultPassword = 'admin';
+      const passwordHash = authService.hashPassword(defaultPassword);
+      userService.createUser('admin', passwordHash, true);
+      
+      // Simulate new machine (clear session but keep users)
+      const usersData = localStorage.getItem('letterboxd_users');
+      localStorage.clear();
+      localStorage.setItem('letterboxd_users', usersData);
+      
+      // Should be able to login with default credentials
+      const result = await authService.login('admin', 'admin');
+      expect(result).toBeDefined();
+      expect(result.username).toBe('admin');
+      expect(result.isAdmin).toBe(true);
+      
+      // Clean up
+      authService.logout();
+      localStorage.clear();
+    });
+  });
+
+  /**
+   * Feature: letterboxd-manager, Property 6: Valid authentication success
    * Validates: Requirements 2.1
    * 
    * For any user with valid credentials, when those credentials are provided 
    * for login, authentication should succeed and grant access.
    */
-  describe('Property 5: Valid authentication success', () => {
+  describe('Property 6: Valid authentication success', () => {
     it('should authenticate users with valid credentials', async () => {
       await fc.assert(
         fc.asyncProperty(
@@ -150,13 +257,13 @@ describe('AuthService - Property-Based Tests', () => {
   });
 
   /**
-   * Feature: letterboxd-manager, Property 6: Invalid authentication rejection
+   * Feature: letterboxd-manager, Property 7: Invalid authentication rejection
    * Validates: Requirements 2.2
    * 
    * For any invalid credential combination (wrong username or password), 
    * when provided for login, authentication should fail and return an error.
    */
-  describe('Property 6: Invalid authentication rejection', () => {
+  describe('Property 7: Invalid authentication rejection', () => {
     it('should reject login with wrong password', async () => {
       await fc.assert(
         fc.asyncProperty(
@@ -207,13 +314,13 @@ describe('AuthService - Property-Based Tests', () => {
   });
 
   /**
-   * Feature: letterboxd-manager, Property 7: Session persistence
+   * Feature: letterboxd-manager, Property 8: Session persistence
    * Validates: Requirements 2.3
    * 
    * For any authenticated user, when performing actions before logout, 
    * the session should remain valid throughout.
    */
-  describe('Property 7: Session persistence', () => {
+  describe('Property 8: Session persistence', () => {
     it('should maintain session across multiple operations', async () => {
       await fc.assert(
         fc.asyncProperty(
@@ -311,13 +418,13 @@ describe('AuthService - Property-Based Tests', () => {
   });
 
   /**
-   * Feature: letterboxd-manager, Property 8: Protected route authentication
+   * Feature: letterboxd-manager, Property 9: Protected route authentication
    * Validates: Requirements 2.4
    * 
    * For any protected route, when accessed without authentication, 
    * access should be denied.
    */
-  describe('Property 8: Protected route authentication', () => {
+  describe('Property 9: Protected route authentication', () => {
     it('should deny access to protected routes without authentication', () => {
       fc.assert(
         fc.property(

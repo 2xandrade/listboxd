@@ -222,6 +222,120 @@ describe('FilterManager - Property-Based Tests', () => {
         { numRuns: 100 }
       );
     });
+
+    /**
+     * Feature: letterboxd-manager, Property 28: Genre filter with multiple genres
+     * Validates: Requirements 11.2, 11.3
+     * 
+     * For any genre and shared list, when a user applies a genre filter,
+     * all films that have at least one matching genre should be displayed.
+     * This explicitly tests that films with multiple genres are correctly filtered.
+     */
+    it('should match films with multiple genres when at least one genre matches', () => {
+      fc.assert(
+        fc.property(
+          userIdArb,
+          usernameArb,
+          fc.constantFrom('Action', 'Drama', 'Comedy', 'Thriller', 'Horror'),
+          (userId, username, selectedGenre) => {
+            // Clear storage at the start of each iteration
+            localStorage.clear();
+            
+            // Create fresh instances
+            const storage = new StorageManager();
+            const list = new ListService(storage);
+            const filter = new FilterManager(list);
+            
+            // Create films with specific genre combinations
+            const films = [
+              // Film with only the selected genre
+              { 
+                id: 1, 
+                title: 'Single Genre Film', 
+                poster: null, 
+                rating: 7.5, 
+                genres: [selectedGenre], 
+                year: 2020, 
+                overview: '', 
+                tmdbUrl: 'http://test.com' 
+              },
+              // Film with selected genre + other genres
+              { 
+                id: 2, 
+                title: 'Multi Genre Film 1', 
+                poster: null, 
+                rating: 8.0, 
+                genres: [selectedGenre, 'Sci-Fi', 'Fantasy'], 
+                year: 2021, 
+                overview: '', 
+                tmdbUrl: 'http://test.com' 
+              },
+              // Film with selected genre at the end
+              { 
+                id: 3, 
+                title: 'Multi Genre Film 2', 
+                poster: null, 
+                rating: 7.8, 
+                genres: ['Romance', 'Mystery', selectedGenre], 
+                year: 2019, 
+                overview: '', 
+                tmdbUrl: 'http://test.com' 
+              },
+              // Film without the selected genre
+              { 
+                id: 4, 
+                title: 'Different Genre Film', 
+                poster: null, 
+                rating: 6.5, 
+                genres: ['Western', 'Adventure'], 
+                year: 2018, 
+                overview: '', 
+                tmdbUrl: 'http://test.com' 
+              },
+              // Film with multiple genres but not the selected one
+              { 
+                id: 5, 
+                title: 'Other Multi Genre Film', 
+                poster: null, 
+                rating: 7.2, 
+                genres: ['Animation', 'Family', 'Musical'], 
+                year: 2022, 
+                overview: '', 
+                tmdbUrl: 'http://test.com' 
+              }
+            ];
+            
+            // Add all films to list
+            for (const film of films) {
+              list.addFilmToList(film, userId, username);
+            }
+            
+            // Apply genre filter
+            filter.setGenreFilter(selectedGenre);
+            const filtered = filter.applyFilters();
+            
+            // Should return exactly 3 films (the ones with selectedGenre)
+            expect(filtered.length).toBe(3);
+            
+            // All returned films should have the selected genre
+            for (const entry of filtered) {
+              expect(entry.film.genres).toBeDefined();
+              expect(Array.isArray(entry.film.genres)).toBe(true);
+              
+              const hasGenre = entry.film.genres.some(g => 
+                g.toLowerCase() === selectedGenre.toLowerCase()
+              );
+              expect(hasGenre).toBe(true);
+            }
+            
+            // Verify the correct films were returned
+            const filteredIds = filtered.map(e => e.film.id).sort();
+            expect(filteredIds).toEqual([1, 2, 3]);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
   });
 });
 

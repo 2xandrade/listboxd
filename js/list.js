@@ -149,8 +149,8 @@ class ListService {
       throw new Error('Film ID is required');
     }
     
-    if (typeof rating !== 'number' || rating < 1 || rating > 5) {
-      throw new Error('Rating must be a number between 1 and 5');
+    if (typeof rating !== 'number' || rating < 0.5 || rating > 5 || (rating * 2) % 1 !== 0) {
+      throw new Error('Rating must be a number between 0.5 and 5 in 0.5 increments');
     }
     
     if (!userId || typeof userId !== 'string') {
@@ -223,8 +223,8 @@ class ListService {
       throw new Error('Watched film ID is required');
     }
     
-    if (typeof newRating !== 'number' || newRating < 1 || newRating > 5) {
-      throw new Error('Rating must be a number between 1 and 5');
+    if (typeof newRating !== 'number' || newRating < 0.5 || newRating > 5 || (newRating * 2) % 1 !== 0) {
+      throw new Error('Rating must be a number between 0.5 and 5 in 0.5 increments');
     }
     
     // Get watched list

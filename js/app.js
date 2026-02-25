@@ -96,12 +96,12 @@ function initializeDefaultUser() {
   // If no users exist, create a default admin user
   if (users.length === 0) {
     try {
-      const defaultPassword = 'admin123';
-      // createUser already hashes the password, so pass plain text
-      userService.createUser('admin', defaultPassword, true);
+      const defaultPassword = 'admin';
+      const passwordHash = authService.hashPassword(defaultPassword);
+      userService.createUser('admin', passwordHash, true);
       console.log('✅ Usuário admin padrão criado!');
       console.log('   Username: admin');
-      console.log('   Password: admin123');
+      console.log('   Password: admin');
       console.log('   ⚠️  Altere a senha após o primeiro login!');
     } catch (error) {
       console.error('Failed to create default user:', error);
@@ -1038,6 +1038,11 @@ function createListEntryElement(entry) {
     ? `<button class="mark-watched-btn" data-film-id="${entry.film.id}">✓ Marcar como Assistido</button>`
     : '';
   
+  // Synopsis/overview
+  const overviewHTML = entry.film.overview && entry.film.overview.trim().length > 0
+    ? `<div class="film-overview">${escapeHtml(entry.film.overview)}</div>`
+    : '';
+  
   entryDiv.innerHTML = `
     ${posterHTML}
     <div class="entry-info">
@@ -1047,6 +1052,7 @@ function createListEntryElement(entry) {
         <span class="film-year">${escapeHtml(yearText)}</span>
       </div>
       <div class="film-genres">${escapeHtml(genresText)}</div>
+      ${overviewHTML}
       <div class="entry-metadata">
         <span class="entry-user">Adicionado por: ${escapeHtml(entry.addedBy)}</span>
         <span class="entry-timestamp">${escapeHtml(formattedDate)}</span>
@@ -1101,11 +1107,153 @@ function handleRemoveFromList(entryId) {
 }
 
 /**
+ * Show rating modal for marking a film as watched
+ * @param {number} filmId - TMDB film ID
+ * @returns {Promise<{rating: number, review: string} | null>} Rating and review or null if cancelled
+ * Requirements: 17.1, 17.2
+ */
+function showRatingModal(filmId) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('rating-modal');
+    const overlay = modal.querySelector('.modal-overlay');
+    const closeBtn = modal.querySelector('.modal-close');
+    const stars = modal.querySelectorAll('.star-btn');
+    const ratingLabel = document.getElementById('rating-label');
+    const reviewInput = document.getElementById('review-input');
+    const cancelBtn = document.getElementById('rating-cancel-btn');
+    const submitBtn = document.getElementById('rating-submit-btn');
+    
+    let selectedRating = 0;
+    
+    // Reset modal state
+    reviewInput.value = '';
+    selectedRating = 0;
+    submitBtn.disabled = true;
+    ratingLabel.textContent = 'Selecione uma avaliação';
+    ratingLabel.classList.remove('has-rating');
+    stars.forEach(star => {
+      star.classList.remove('full', 'half', 'active');
+      star.classList.add('empty');
+      star.textContent = '★';
+    });
+    
+    // Show modal with animation
+    modal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    
+    // Helper function to update star display
+    function updateStarDisplay(rating) {
+      const fullStars = Math.floor(rating);
+      const hasHalf = (rating % 1) === 0.5;
+      
+      stars.forEach((star, index) => {
+        const starNum = index + 1;
+        star.classList.remove('full', 'half', 'empty', 'active');
+        
+        if (starNum <= fullStars) {
+          // Stars before the half star should be full
+          star.classList.add('full', 'active');
+          star.textContent = '★';
+        } else if (starNum === fullStars + 1 && hasHalf) {
+          // The star after full stars should be half if hasHalf
+          star.classList.add('half', 'active');
+          star.textContent = '★';
+        } else {
+          // All other stars should be empty
+          star.classList.add('empty');
+          star.textContent = '★';
+        }
+      });
+    }
+    
+    // Star rating interaction
+    stars.forEach((star) => {
+      const starNum = parseInt(star.dataset.star);
+      
+      // Click handler - toggle between empty → full → half
+      star.addEventListener('click', () => {
+        const currentState = star.classList.contains('full') ? 'full' : 
+                           star.classList.contains('half') ? 'half' : 'empty';
+        
+        // If clicking on a star that's less than current rating, set to that star
+        if (selectedRating > starNum) {
+          selectedRating = starNum;
+        }
+        // If clicking on the last selected star (full), make it half
+        else if (currentState === 'full' && selectedRating === starNum) {
+          selectedRating = starNum - 0.5;
+        }
+        // If clicking on a half star, go back one full star
+        else if (currentState === 'half' && selectedRating === starNum - 0.5) {
+          selectedRating = starNum - 1;
+        }
+        // Otherwise, set to full star
+        else {
+          selectedRating = starNum;
+        }
+        
+        // Ensure minimum rating of 0.5
+        if (selectedRating < 0.5) {
+          selectedRating = 0;
+        }
+        
+        submitBtn.disabled = selectedRating === 0;
+        updateStarDisplay(selectedRating);
+        
+        // Update label
+        if (selectedRating > 0) {
+          ratingLabel.textContent = `${selectedRating} ${selectedRating === 1 ? 'estrela' : 'estrelas'}`;
+          ratingLabel.classList.add('has-rating');
+        } else {
+          ratingLabel.textContent = 'Selecione uma avaliação';
+          ratingLabel.classList.remove('has-rating');
+        }
+      });
+    });
+    
+    // Close handlers
+    const closeModal = (result) => {
+      modal.classList.add('hidden');
+      document.body.classList.remove('modal-open');
+      
+      // Clean up event listeners
+      stars.forEach(star => {
+        star.replaceWith(star.cloneNode(true));
+      });
+      
+      resolve(result);
+    };
+    
+    closeBtn.addEventListener('click', () => closeModal(null), { once: true });
+    overlay.addEventListener('click', () => closeModal(null), { once: true });
+    cancelBtn.addEventListener('click', () => closeModal(null), { once: true });
+    
+    submitBtn.addEventListener('click', () => {
+      if (selectedRating > 0) {
+        closeModal({
+          rating: selectedRating,
+          review: reviewInput.value.trim()
+        });
+      }
+    }, { once: true });
+    
+    // ESC key to close
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        closeModal(null);
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+  });
+}
+
+/**
  * Handle marking a film as watched
  * @param {number} filmId - TMDB film ID
- * Requirements: 12.2, 12.3, 12.6, 12.8
+ * Requirements: 12.2, 12.3, 12.6, 12.8, 17.1, 17.2
  */
-function handleMarkAsWatched(filmId) {
+async function handleMarkAsWatched(filmId) {
   // Get current authenticated user
   const currentUser = authService.getCurrentUser();
   
@@ -1120,24 +1268,15 @@ function handleMarkAsWatched(filmId) {
     return;
   }
   
-  // Prompt for rating (1-5 stars)
-  const ratingInput = prompt('Avalie o filme de 1 a 5 estrelas:\n★ = 1 estrela\n★★ = 2 estrelas\n★★★ = 3 estrelas\n★★★★ = 4 estrelas\n★★★★★ = 5 estrelas');
+  // Show rating modal (Requirements 17.1, 17.2)
+  const result = await showRatingModal(filmId);
   
   // Check if user cancelled
-  if (ratingInput === null) {
+  if (!result) {
     return;
   }
   
-  // Parse and validate rating
-  const rating = parseFloat(ratingInput);
-  
-  if (isNaN(rating) || rating < 1 || rating > 5) {
-    notificationService.error('Por favor, insira uma avaliação válida entre 1 e 5 estrelas.');
-    return;
-  }
-  
-  // Prompt for optional review
-  const review = prompt('Escreva uma review sobre o filme (opcional):') || '';
+  const { rating, review } = result;
   
   try {
     // Mark as watched (pass isAdmin flag)
@@ -1518,12 +1657,155 @@ function hidePaginationControls() {
 }
 
 /**
+ * Show rating modal for editing a watched film rating
+ * @param {string} watchedId - ID of the watched film entry
+ * @param {number} currentRating - Current rating value
+ * @returns {Promise<number | null>} New rating or null if cancelled
+ * Requirements: 17.1, 17.2
+ */
+function showEditRatingModal(watchedId, currentRating) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('rating-modal');
+    const overlay = modal.querySelector('.modal-overlay');
+    const closeBtn = modal.querySelector('.modal-close');
+    const stars = modal.querySelectorAll('.star-btn');
+    const ratingLabel = document.getElementById('rating-label');
+    const reviewContainer = document.querySelector('.review-container');
+    const cancelBtn = document.getElementById('rating-cancel-btn');
+    const submitBtn = document.getElementById('rating-submit-btn');
+    const modalTitle = modal.querySelector('.rating-modal-title');
+    const modalSubtitle = modal.querySelector('.rating-modal-subtitle');
+    
+    let selectedRating = currentRating;
+    
+    // Update modal for edit mode
+    modalTitle.textContent = 'Editar Avaliação';
+    modalSubtitle.textContent = `Avaliação atual: ${currentRating.toFixed(1)} estrelas`;
+    
+    // Hide review container for edit mode
+    reviewContainer.style.display = 'none';
+    
+    // Set initial rating
+    submitBtn.disabled = false;
+    updateStarDisplay(selectedRating);
+    
+    ratingLabel.textContent = `${selectedRating} ${selectedRating === 1 ? 'estrela' : 'estrelas'}`;
+    ratingLabel.classList.add('has-rating');
+    
+    // Show modal with animation
+    modal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    
+    // Helper function to update star display
+    function updateStarDisplay(rating) {
+      const fullStars = Math.floor(rating);
+      const hasHalf = (rating % 1) === 0.5;
+      
+      stars.forEach((star, index) => {
+        const starNum = index + 1;
+        star.classList.remove('full', 'half', 'empty', 'active');
+        
+        if (starNum <= fullStars) {
+          // Stars before the half star should be full
+          star.classList.add('full', 'active');
+          star.textContent = '★';
+        } else if (starNum === fullStars + 1 && hasHalf) {
+          // The star after full stars should be half if hasHalf
+          star.classList.add('half', 'active');
+          star.textContent = '★';
+        } else {
+          // All other stars should be empty
+          star.classList.add('empty');
+          star.textContent = '★';
+        }
+      });
+    }
+    
+    // Star rating interaction
+    stars.forEach((star) => {
+      const starNum = parseInt(star.dataset.star);
+      
+      // Click handler - toggle between empty → full → half
+      star.addEventListener('click', () => {
+        const currentState = star.classList.contains('full') ? 'full' : 
+                           star.classList.contains('half') ? 'half' : 'empty';
+        
+        // If clicking on a star that's less than current rating, set to that star
+        if (selectedRating > starNum) {
+          selectedRating = starNum;
+        }
+        // If clicking on the last selected star (full), make it half
+        else if (currentState === 'full' && selectedRating === starNum) {
+          selectedRating = starNum - 0.5;
+        }
+        // If clicking on a half star, go back one full star
+        else if (currentState === 'half' && selectedRating === starNum - 0.5) {
+          selectedRating = starNum - 1;
+        }
+        // Otherwise, set to full star
+        else {
+          selectedRating = starNum;
+        }
+        
+        // Ensure minimum rating of 0.5
+        if (selectedRating < 0.5) {
+          selectedRating = 0.5;
+        }
+        
+        updateStarDisplay(selectedRating);
+        
+        // Update label
+        ratingLabel.textContent = `${selectedRating} ${selectedRating === 1 ? 'estrela' : 'estrelas'}`;
+        ratingLabel.classList.add('has-rating');
+      });
+    });
+    
+    // Close handlers
+    const closeModal = (result) => {
+      modal.classList.add('hidden');
+      document.body.classList.remove('modal-open');
+      
+      // Reset modal state
+      modalTitle.textContent = 'Avaliar Filme';
+      modalSubtitle.textContent = 'Como foi a experiência?';
+      reviewContainer.style.display = 'flex';
+      
+      // Clean up event listeners
+      stars.forEach(star => {
+        star.replaceWith(star.cloneNode(true));
+      });
+      
+      resolve(result);
+    };
+    
+    closeBtn.addEventListener('click', () => closeModal(null), { once: true });
+    overlay.addEventListener('click', () => closeModal(null), { once: true });
+    cancelBtn.addEventListener('click', () => closeModal(null), { once: true });
+    
+    submitBtn.addEventListener('click', () => {
+      if (selectedRating > 0) {
+        closeModal(selectedRating);
+      }
+    }, { once: true });
+    
+    // ESC key to close
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        closeModal(null);
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+  });
+}
+
+/**
  * Handle editing rating of a watched film
  * @param {string} watchedId - ID of the watched film entry
  * @param {number} currentRating - Current rating value
- * Requirements: 13.1, 13.3
+ * Requirements: 13.1, 13.3, 17.1, 17.2
  */
-function handleEditRating(watchedId, currentRating) {
+async function handleEditRating(watchedId, currentRating) {
   // Get current authenticated user
   const currentUser = authService.getCurrentUser();
   
@@ -1538,19 +1820,11 @@ function handleEditRating(watchedId, currentRating) {
     return;
   }
   
-  // Prompt for new rating (1-5 stars)
-  const ratingInput = prompt(`Avaliação atual: ${currentRating.toFixed(1)}/5 estrelas\n\nInsira a nova avaliação de 1 a 5 estrelas:\n★ = 1 estrela\n★★ = 2 estrelas\n★★★ = 3 estrelas\n★★★★ = 4 estrelas\n★★★★★ = 5 estrelas`);
+  // Show edit rating modal (Requirements 17.1, 17.2)
+  const newRating = await showEditRatingModal(watchedId, currentRating);
   
   // Check if user cancelled
-  if (ratingInput === null) {
-    return;
-  }
-  
-  // Parse and validate rating
-  const newRating = parseFloat(ratingInput);
-  
-  if (isNaN(newRating) || newRating < 1 || newRating > 5) {
-    notificationService.error('Por favor, insira uma avaliação válida entre 1 e 5 estrelas.');
+  if (newRating === null) {
     return;
   }
   

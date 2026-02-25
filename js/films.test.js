@@ -422,6 +422,8 @@ describe('FilmService', () => {
       // Restore original fetch
       global.fetch = originalFetch;
     });
+
+
   });
 
   describe('Unit Tests - API Response Parsing', () => {
