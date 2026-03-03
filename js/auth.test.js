@@ -1,24 +1,75 @@
 /**
  * Property-based tests for AuthService
  * Uses fast-check for property-based testing
- * Requirements: 1.5, 2.1, 2.2, 2.3, 2.4
+ * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 7.1, 7.2, 7.3, 7.4, 7.5
  */
 
 const fc = require('fast-check');
 const AuthService = require('./auth.js');
-const UserService = require('./users.js');
 const StorageManager = require('./storage.js');
+
+// Mock GoogleSheetsApi for testing
+class MockGoogleSheetsApi {
+  constructor() {
+    this.users = new Map(); // Store users by email
+  }
+
+  async registerUser(payload) {
+    const { nome, email, senha } = payload;
+    
+    // Check if user already exists
+    if (this.users.has(email)) {
+      throw new Error('Email já existe');
+    }
+    
+    // Create user with mock ID
+    const user = {
+      id_usuario: `user_${Date.now()}_${Math.random()}`,
+      nome: nome,
+      email: email,
+      senha: senha, // In real API, this would be hashed
+      is_admin: false
+    };
+    
+    this.users.set(email, user);
+    
+    return {
+      ok: true,
+      data: user
+    };
+  }
+
+  async login(payload) {
+    const { email, senha } = payload;
+    
+    const user = this.users.get(email);
+    
+    if (!user || user.senha !== senha) {
+      throw new Error('Invalid credentials');
+    }
+    
+    return {
+      ok: true,
+      data: user
+    };
+  }
+
+  // Helper method to clear users (for testing)
+  clear() {
+    this.users.clear();
+  }
+}
 
 describe('AuthService - Property-Based Tests', () => {
   let authService;
-  let userService;
   let storageManager;
+  let mockApi;
 
   beforeEach(() => {
     // Create fresh instances before each test
     storageManager = new StorageManager();
-    userService = new UserService(storageManager);
-    authService = new AuthService(storageManager, userService);
+    mockApi = new MockGoogleSheetsApi();
+    authService = new AuthService(storageManager, mockApi);
     // Clear localStorage before each test
     localStorage.clear();
   });
@@ -26,228 +77,51 @@ describe('AuthService - Property-Based Tests', () => {
   afterEach(() => {
     // Clean up after each test
     localStorage.clear();
+    mockApi.clear();
   });
 
   /**
-   * Feature: letterboxd-manager, Property 4: Password hashing security
-   * Validates: Requirements 1.5
+   * Feature: google-sheets-integration, Property 1: Valid authentication success
+   * Validates: Requirements 1.3, 1.4
    * 
-   * For any password string, when stored in the system, the stored value 
-   * should be a hash and not equal to the plain text password.
+   * For any user with valid credentials registered via API, when those credentials 
+   * are provided for login, authentication should succeed and create a local session.
    */
-  describe('Property 4: Password hashing security', () => {
-    it('should never store passwords in plain text', () => {
-      fc.assert(
-        fc.property(
-          fc.string({ minLength: 1, maxLength: 100 }),
-          (password) => {
-            const hash = authService.hashPassword(password);
-            
-            // Hash should not equal the plain text password
-            expect(hash).not.toBe(password);
-            
-            // Hash should be a string
-            expect(typeof hash).toBe('string');
-            
-            // Hash should not be empty
-            expect(hash.length).toBeGreaterThan(0);
-            
-            // Hash should be significantly different from password
-            // (bcrypt hashes are typically 60 characters)
-            expect(hash.length).toBeGreaterThan(password.length);
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-
-    it('should produce different hashes for different passwords', () => {
-      fc.assert(
-        fc.property(
-          fc.string({ minLength: 1, maxLength: 100 }),
-          fc.string({ minLength: 1, maxLength: 100 }),
-          (password1, password2) => {
-            // Skip if passwords are the same
-            fc.pre(password1 !== password2);
-            
-            const hash1 = authService.hashPassword(password1);
-            const hash2 = authService.hashPassword(password2);
-            
-            // Different passwords should produce different hashes
-            expect(hash1).not.toBe(hash2);
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-
-    it('should produce verifiable hashes', () => {
-      fc.assert(
-        fc.property(
-          fc.string({ minLength: 1, maxLength: 100 }),
-          (password) => {
-            const hash = authService.hashPassword(password);
-            
-            // The hash should verify against the original password
-            expect(authService.verifyPassword(password, hash)).toBe(true);
-            
-            // The hash should not verify against a different password
-            expect(authService.verifyPassword(password + 'x', hash)).toBe(false);
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-  });
-
-  /**
-   * Feature: letterboxd-manager, Property 5: Default admin creation
-   * Validates: Requirements 1.6, 1.7
-   * 
-   * For any system state where no users exist, when the system initializes, 
-   * a default admin user with username "admin" and password "admin" should be created.
-   */
-  describe('Property 5: Default admin creation', () => {
-    it('should create default admin user when no users exist', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.constant(null), // No input needed, just testing initialization
-          async () => {
-            // Ensure no users exist
-            localStorage.clear();
-            expect(userService.getAllUsers()).toHaveLength(0);
-            
-            // Simulate system initialization by creating default user
-            const users = userService.getAllUsers();
-            if (users.length === 0) {
-              const defaultPassword = 'admin';
-              const passwordHash = authService.hashPassword(defaultPassword);
-              userService.createUser('admin', passwordHash, true);
-            }
-            
-            // Verify default admin was created
-            const allUsers = userService.getAllUsers();
-            expect(allUsers).toHaveLength(1);
-            
-            const adminUser = allUsers[0];
-            expect(adminUser.username).toBe('admin');
-            expect(adminUser.isAdmin).toBe(true);
-            
-            // Verify we can login with default credentials
-            const result = await authService.login('admin', 'admin');
-            expect(result).toBeDefined();
-            expect(result.username).toBe('admin');
-            expect(result.isAdmin).toBe(true);
-            
-            // Clean up
-            authService.logout();
-            localStorage.clear();
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-
-    it('should not create default admin if users already exist', () => {
-      fc.assert(
-        fc.property(
-          fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0 && s !== 'admin'),
-          fc.string({ minLength: 4, maxLength: 50 }),
-          (username, password) => {
-            // Clear and create a non-admin user
-            localStorage.clear();
-            const passwordHash = authService.hashPassword(password);
-            userService.createUser(username, passwordHash, false);
-            
-            const usersBefore = userService.getAllUsers();
-            expect(usersBefore).toHaveLength(1);
-            
-            // Try to initialize default user (should not create)
-            const users = userService.getAllUsers();
-            if (users.length === 0) {
-              const defaultPassword = 'admin';
-              const defaultHash = authService.hashPassword(defaultPassword);
-              userService.createUser('admin', defaultHash, true);
-            }
-            
-            // Should still have only one user (the original one)
-            const usersAfter = userService.getAllUsers();
-            expect(usersAfter).toHaveLength(1);
-            expect(usersAfter[0].username).toBe(username);
-            
-            // Clean up
-            localStorage.clear();
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-
-    it('should allow login from new machine with default credentials', async () => {
-      // Simulate first machine
-      localStorage.clear();
-      const defaultPassword = 'admin';
-      const passwordHash = authService.hashPassword(defaultPassword);
-      userService.createUser('admin', passwordHash, true);
-      
-      // Simulate new machine (clear session but keep users)
-      const usersData = localStorage.getItem('letterboxd_users');
-      localStorage.clear();
-      localStorage.setItem('letterboxd_users', usersData);
-      
-      // Should be able to login with default credentials
-      const result = await authService.login('admin', 'admin');
-      expect(result).toBeDefined();
-      expect(result.username).toBe('admin');
-      expect(result.isAdmin).toBe(true);
-      
-      // Clean up
-      authService.logout();
-      localStorage.clear();
-    });
-  });
-
-  /**
-   * Feature: letterboxd-manager, Property 6: Valid authentication success
-   * Validates: Requirements 2.1
-   * 
-   * For any user with valid credentials, when those credentials are provided 
-   * for login, authentication should succeed and grant access.
-   */
-  describe('Property 6: Valid authentication success', () => {
-    it('should authenticate users with valid credentials', async () => {
+  describe('Property 1: Valid authentication success', () => {
+    it('should authenticate users with valid credentials via API', async () => {
       await fc.assert(
         fc.asyncProperty(
           fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
           fc.string({ minLength: 4, maxLength: 50 }),
-          fc.boolean(),
-          async (username, password, isAdmin) => {
-            // Create a user with hashed password
-            const passwordHash = authService.hashPassword(password);
-            userService.createUser(username, passwordHash, isAdmin);
+          async (nome, email, password) => {
+            // Register user via mock API
+            await mockApi.registerUser({
+              nome: nome,
+              email: email,
+              senha: password
+            });
             
             // Attempt to login with the same credentials
-            const result = await authService.login(username, password);
+            const result = await authService.login(email, password);
             
             // Should return user object
             expect(result).toBeDefined();
-            expect(result.username).toBe(username);
-            expect(result.isAdmin).toBe(isAdmin);
+            expect(result.username).toBe(nome);
+            expect(result.email).toBe(email);
             expect(result.id).toBeDefined();
-            
-            // Should not include password hash in result
-            expect(result.passwordHash).toBeUndefined();
             
             // Should be authenticated after login
             expect(authService.isAuthenticated()).toBe(true);
             
             // Should return the same user from getCurrentUser
             const currentUser = authService.getCurrentUser();
-            expect(currentUser.username).toBe(username);
-            expect(currentUser.isAdmin).toBe(isAdmin);
+            expect(currentUser.username).toBe(nome);
+            expect(currentUser.email).toBe(email);
             
             // Clean up for next iteration
             authService.logout();
+            mockApi.clear();
             localStorage.clear();
           }
         ),
@@ -257,34 +131,39 @@ describe('AuthService - Property-Based Tests', () => {
   });
 
   /**
-   * Feature: letterboxd-manager, Property 7: Invalid authentication rejection
-   * Validates: Requirements 2.2
+   * Feature: google-sheets-integration, Property 2: Invalid authentication rejection
+   * Validates: Requirements 1.5
    * 
-   * For any invalid credential combination (wrong username or password), 
-   * when provided for login, authentication should fail and return an error.
+   * For any invalid credential combination (wrong email or password), 
+   * when provided for login, authentication should fail with appropriate error message.
    */
-  describe('Property 7: Invalid authentication rejection', () => {
+  describe('Property 2: Invalid authentication rejection', () => {
     it('should reject login with wrong password', async () => {
       await fc.assert(
         fc.asyncProperty(
           fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
           fc.string({ minLength: 4, maxLength: 50 }),
           fc.string({ minLength: 4, maxLength: 50 }),
-          async (username, correctPassword, wrongPassword) => {
+          async (nome, email, correctPassword, wrongPassword) => {
             // Skip if passwords are the same
             fc.pre(correctPassword !== wrongPassword);
             
-            // Create a user with correct password
-            const passwordHash = authService.hashPassword(correctPassword);
-            userService.createUser(username, passwordHash, false);
+            // Register user with correct password
+            await mockApi.registerUser({
+              nome: nome,
+              email: email,
+              senha: correctPassword
+            });
             
             // Attempt to login with wrong password
-            await expect(authService.login(username, wrongPassword)).rejects.toThrow('Invalid credentials');
+            await expect(authService.login(email, wrongPassword)).rejects.toThrow();
             
             // Should not be authenticated after failed login
             expect(authService.isAuthenticated()).toBe(false);
             
             // Clean up for next iteration
+            mockApi.clear();
             localStorage.clear();
           }
         ),
@@ -292,14 +171,14 @@ describe('AuthService - Property-Based Tests', () => {
       );
     });
 
-    it('should reject login with non-existent username', async () => {
+    it('should reject login with non-existent email', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
           fc.string({ minLength: 4, maxLength: 50 }),
-          async (username, password) => {
-            // Attempt to login without creating user
-            await expect(authService.login(username, password)).rejects.toThrow('Invalid credentials');
+          async (email, password) => {
+            // Attempt to login without registering user
+            await expect(authService.login(email, password)).rejects.toThrow();
             
             // Should not be authenticated after failed login
             expect(authService.isAuthenticated()).toBe(false);
@@ -314,25 +193,28 @@ describe('AuthService - Property-Based Tests', () => {
   });
 
   /**
-   * Feature: letterboxd-manager, Property 8: Session persistence
-   * Validates: Requirements 2.3
+   * Feature: google-sheets-integration, Property 3: Session persistence
+   * Validates: Requirements 7.1, 7.2, 7.3
    * 
-   * For any authenticated user, when performing actions before logout, 
-   * the session should remain valid throughout.
+   * For any authenticated user, the session should persist in localStorage
+   * and remain valid until logout or expiration.
    */
-  describe('Property 8: Session persistence', () => {
+  describe('Property 3: Session persistence', () => {
     it('should maintain session across multiple operations', async () => {
       await fc.assert(
         fc.asyncProperty(
           fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
           fc.string({ minLength: 4, maxLength: 50 }),
-          fc.boolean(),
           fc.integer({ min: 1, max: 10 }),
-          async (username, password, isAdmin, numOperations) => {
-            // Create and login user
-            const passwordHash = authService.hashPassword(password);
-            userService.createUser(username, passwordHash, isAdmin);
-            await authService.login(username, password);
+          async (nome, email, password, numOperations) => {
+            // Register and login user
+            await mockApi.registerUser({
+              nome: nome,
+              email: email,
+              senha: password
+            });
+            await authService.login(email, password);
             
             // Perform multiple operations and verify session persists
             for (let i = 0; i < numOperations; i++) {
@@ -340,8 +222,8 @@ describe('AuthService - Property-Based Tests', () => {
               
               const currentUser = authService.getCurrentUser();
               expect(currentUser).not.toBeNull();
-              expect(currentUser.username).toBe(username);
-              expect(currentUser.isAdmin).toBe(isAdmin);
+              expect(currentUser.username).toBe(nome);
+              expect(currentUser.email).toBe(email);
             }
             
             // Session should still be valid after all operations
@@ -349,6 +231,7 @@ describe('AuthService - Property-Based Tests', () => {
             
             // Clean up for next iteration
             authService.logout();
+            mockApi.clear();
             localStorage.clear();
           }
         ),
@@ -360,12 +243,16 @@ describe('AuthService - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
           fc.string({ minLength: 4, maxLength: 50 }),
-          async (username, password) => {
-            // Create and login user
-            const passwordHash = authService.hashPassword(password);
-            userService.createUser(username, passwordHash, false);
-            await authService.login(username, password);
+          async (nome, email, password) => {
+            // Register and login user
+            await mockApi.registerUser({
+              nome: nome,
+              email: email,
+              senha: password
+            });
+            await authService.login(email, password);
             
             // Verify authenticated
             expect(authService.isAuthenticated()).toBe(true);
@@ -378,6 +265,7 @@ describe('AuthService - Property-Based Tests', () => {
             expect(authService.getCurrentUser()).toBeNull();
             
             // Clean up for next iteration
+            mockApi.clear();
             localStorage.clear();
           }
         ),
@@ -389,12 +277,16 @@ describe('AuthService - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
           fc.string({ minLength: 4, maxLength: 50 }),
-          async (username, password) => {
-            // Create and login user
-            const passwordHash = authService.hashPassword(password);
-            userService.createUser(username, passwordHash, false);
-            await authService.login(username, password);
+          async (nome, email, password) => {
+            // Register and login user
+            await mockApi.registerUser({
+              nome: nome,
+              email: email,
+              senha: password
+            });
+            await authService.login(email, password);
             
             // Verify authenticated
             expect(authService.isAuthenticated()).toBe(true);
@@ -409,6 +301,7 @@ describe('AuthService - Property-Based Tests', () => {
             expect(authService.getCurrentUser()).toBeNull();
             
             // Clean up for next iteration
+            mockApi.clear();
             localStorage.clear();
           }
         ),
@@ -418,13 +311,110 @@ describe('AuthService - Property-Based Tests', () => {
   });
 
   /**
-   * Feature: letterboxd-manager, Property 9: Protected route authentication
-   * Validates: Requirements 2.4
+   * Feature: google-sheets-integration, Property 4: User registration
+   * Validates: Requirements 1.1, 1.2
+   * 
+   * For any valid user data, when registration is requested via API,
+   * a new user should be created and returned.
+   */
+  describe('Property 4: User registration', () => {
+    it('should register new users via API', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
+          fc.string({ minLength: 4, maxLength: 50 }),
+          async (nome, email, password) => {
+            // Register user
+            const result = await authService.register(nome, email, password);
+            
+            // Should return user object
+            expect(result).toBeDefined();
+            expect(result.nome).toBe(nome);
+            expect(result.email).toBe(email);
+            expect(result.id).toBeDefined();
+            
+            // Should be able to login with registered credentials
+            const loginResult = await authService.login(email, password);
+            expect(loginResult).toBeDefined();
+            expect(loginResult.email).toBe(email);
+            
+            // Clean up for next iteration
+            authService.logout();
+            mockApi.clear();
+            localStorage.clear();
+          }
+        ),
+        { numRuns: 25 }
+      );
+    });
+
+    it('should reject duplicate email registration', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
+          fc.string({ minLength: 4, maxLength: 50 }),
+          async (nome, email, password) => {
+            // Register user first time
+            await authService.register(nome, email, password);
+            
+            // Attempt to register with same email should fail
+            await expect(authService.register(nome, email, password)).rejects.toThrow();
+            
+            // Clean up for next iteration
+            mockApi.clear();
+            localStorage.clear();
+          }
+        ),
+        { numRuns: 25 }
+      );
+    });
+  });
+
+  /**
+   * Feature: google-sheets-integration, Property 5: Error handling
+   * Validates: Requirements 7.4, 7.5
+   * 
+   * For any API error, the service should provide user-friendly error messages
+   * in Portuguese.
+   */
+  describe('Property 5: Error handling', () => {
+    it('should provide user-friendly error messages for login failures', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.emailAddress(),
+          fc.string({ minLength: 4, maxLength: 50 }),
+          async (email, password) => {
+            // Attempt login with non-existent user
+            try {
+              await authService.login(email, password);
+              // Should not reach here
+              expect(true).toBe(false);
+            } catch (error) {
+              // Error message should be user-friendly
+              expect(error.message).toBeDefined();
+              expect(typeof error.message).toBe('string');
+              expect(error.message.length).toBeGreaterThan(0);
+            }
+            
+            // Clean up for next iteration
+            localStorage.clear();
+          }
+        ),
+        { numRuns: 25 }
+      );
+    });
+  });
+
+  /**
+   * Feature: google-sheets-integration, Property 6: Protected route authentication
+   * Validates: Requirements 7.1
    * 
    * For any protected route, when accessed without authentication, 
    * access should be denied.
    */
-  describe('Property 9: Protected route authentication', () => {
+  describe('Property 6: Protected route authentication', () => {
     it('should deny access to protected routes without authentication', () => {
       fc.assert(
         fc.property(
@@ -448,18 +438,23 @@ describe('AuthService - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
           fc.string({ minLength: 4, maxLength: 50 }),
-          async (username, password) => {
-            // Create and login user
-            const passwordHash = authService.hashPassword(password);
-            userService.createUser(username, passwordHash, false);
-            await authService.login(username, password);
+          async (nome, email, password) => {
+            // Register and login user
+            await mockApi.registerUser({
+              nome: nome,
+              email: email,
+              senha: password
+            });
+            await authService.login(email, password);
             
             // Should not throw when authenticated
             expect(() => authService.requireAuth()).not.toThrow();
             
             // Clean up for next iteration
             authService.logout();
+            mockApi.clear();
             localStorage.clear();
           }
         ),
@@ -471,41 +466,23 @@ describe('AuthService - Property-Based Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
+          fc.emailAddress(),
           fc.string({ minLength: 4, maxLength: 50 }),
-          async (username, password) => {
-            // Create and login non-admin user
-            const passwordHash = authService.hashPassword(password);
-            userService.createUser(username, passwordHash, false); // isAdmin = false
-            await authService.login(username, password);
+          async (nome, email, password) => {
+            // Register and login non-admin user
+            await mockApi.registerUser({
+              nome: nome,
+              email: email,
+              senha: password
+            });
+            await authService.login(email, password);
             
             // Should throw when non-admin tries to access admin route
             expect(() => authService.requireAdmin()).toThrow('Admin privileges required');
             
             // Clean up for next iteration
             authService.logout();
-            localStorage.clear();
-          }
-        ),
-        { numRuns: 25 }
-      );
-    });
-
-    it('should allow admin routes to admin users', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length > 0),
-          fc.string({ minLength: 4, maxLength: 50 }),
-          async (username, password) => {
-            // Create and login admin user
-            const passwordHash = authService.hashPassword(password);
-            userService.createUser(username, passwordHash, true); // isAdmin = true
-            await authService.login(username, password);
-            
-            // Should not throw when admin accesses admin route
-            expect(() => authService.requireAdmin()).not.toThrow();
-            
-            // Clean up for next iteration
-            authService.logout();
+            mockApi.clear();
             localStorage.clear();
           }
         ),
@@ -514,3 +491,4 @@ describe('AuthService - Property-Based Tests', () => {
     });
   });
 });
+

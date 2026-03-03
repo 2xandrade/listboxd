@@ -99,6 +99,7 @@ A aplicação segue uma arquitetura em camadas:
 - Node.js (versão 14 ou superior) - apenas para desenvolvimento e testes
 - Navegador web moderno (Chrome, Firefox, Safari, Edge)
 - Conta no TMDB para obter API key
+- Conta Google para configurar Google Sheets API (backend)
 
 ### Passo 1: Clone o Repositório
 
@@ -115,7 +116,54 @@ npm install
 
 **Nota**: As dependências são necessárias apenas para executar testes. A aplicação funciona sem Node.js em produção.
 
-### Passo 3: Configure o Arquivo de Configuração
+### Passo 3: Configure o Google Sheets API (Backend)
+
+**IMPORTANTE**: Este projeto usa Google Sheets como backend para armazenamento de dados.
+
+Siga o guia completo de configuração:
+
+📖 **[Ver Guia Completo: .kiro/specs/google-sheets-integration/QUICK-START.md](.kiro/specs/google-sheets-integration/QUICK-START.md)**
+
+Resumo rápido:
+1. Crie uma planilha Google Sheets com 3 abas: `Usuarios`, `Listas`, `Filmes`
+2. Configure Apps Script com o código fornecido
+3. Faça deploy como Web App
+4. Copie a URL do Web App
+
+Arquivos de referência:
+- 📋 **QUICK-START.md** - Checklist rápido
+- 📖 **google-sheets-setup.md** - Instruções detalhadas
+- 💻 **apps-script-code.gs** - Código completo do Apps Script
+- 🧪 **api-testing-guide.md** - Exemplos de teste dos endpoints
+
+#### Como Obter a URL do Google Sheets Web App
+
+1. **Criar a Planilha**:
+   - Acesse [Google Sheets](https://sheets.google.com)
+   - Crie uma nova planilha
+   - Renomeie as abas para: `Usuarios`, `Listas`, `Filmes`
+
+2. **Configurar Apps Script**:
+   - Na planilha, vá em **Extensões** → **Apps Script**
+   - Copie o código de `.kiro/specs/google-sheets-integration/apps-script-code.gs`
+   - Cole no editor do Apps Script
+   - Salve o projeto (Ctrl+S)
+
+3. **Fazer Deploy**:
+   - Clique em **Implantar** → **Nova implantação**
+   - Selecione tipo: **Aplicativo da Web**
+   - Configure:
+     - **Descrição**: "Letterboxd Manager API"
+     - **Executar como**: "Eu"
+     - **Quem tem acesso**: "Qualquer pessoa"
+   - Clique em **Implantar**
+   - **COPIE A URL** que aparece (formato: `https://script.google.com/macros/s/SCRIPT_ID/exec`)
+
+4. **Testar a API**:
+   - Use os exemplos em `api-testing-guide.md` para testar os endpoints
+   - Verifique se os dados estão sendo salvos na planilha
+
+### Passo 4: Configure o Arquivo de Configuração
 
 Copie o arquivo de exemplo e configure suas credenciais:
 
@@ -123,7 +171,9 @@ Copie o arquivo de exemplo e configure suas credenciais:
 cp config.example.js config.js
 ```
 
-Edite o arquivo `config.js` e adicione sua API key do TMDB (veja próxima seção).
+Edite o arquivo `config.js` e adicione:
+1. Sua API key do TMDB (veja próxima seção)
+2. A URL do Google Sheets Web App (do passo anterior)
 
 ## 🔑 Configuração da API do TMDB
 
@@ -150,6 +200,9 @@ const CONFIG = {
         baseUrl: 'https://api.themoviedb.org/3',
         imageBaseUrl: 'https://image.tmdb.org/t/p/w500'
     },
+    googleSheets: {
+        apiUrl: 'https://script.google.com/macros/s/SEU_SCRIPT_ID_AQUI/exec'
+    },
     app: {
         sessionTimeout: 3600000,
         maxLoginAttempts: 5,
@@ -157,6 +210,10 @@ const CONFIG = {
     }
 };
 ```
+
+**Onde encontrar cada valor:**
+- `apiKey` e `readAccessToken`: Obtidos no TMDB (veja seção anterior)
+- `apiUrl`: URL do Google Sheets Web App (veja Passo 3)
 
 **⚠️ IMPORTANTE**: Nunca commite o arquivo `config.js` no repositório. Ele já está no `.gitignore`.
 
@@ -232,6 +289,18 @@ Salve como `setup-admin.html`, abra no navegador, clique no botão e depois dele
 
 ## 🚀 Deploy no GitHub Pages
 
+### 📖 Guia Completo de Deploy
+
+Para instruções detalhadas sobre como configurar o deploy automático com GitHub Actions, consulte:
+
+**[📘 Guia de Deploy com GitHub Actions](.github/DEPLOYMENT.md)**
+
+Este guia inclui:
+- Passo a passo para configurar secrets
+- Como testar o deploy
+- Troubleshooting de problemas comuns
+- Boas práticas de segurança
+
 ### ⚠️ Importante: Segurança da API Key
 
 A API key do TMDB **NÃO DEVE** ser exposta publicamente no código. Para hospedar no GitHub Pages com segurança, usamos **GitHub Actions** com **Secrets**.
@@ -243,15 +312,33 @@ A API key do TMDB **NÃO DEVE** ser exposta publicamente no código. Para hosped
 3. Solicite uma API Key (escolha a opção "Developer")
 4. Copie sua **API Key (v3 auth)**
 
-### Passo 2: Configurar Secret no GitHub
+### Passo 2: Configurar Secrets no GitHub
+
+Para fazer deploy seguro no GitHub Pages, você precisa configurar secrets para suas credenciais:
 
 1. Vá no seu repositório no GitHub
 2. Clique em **Settings** → **Secrets and variables** → **Actions**
-3. Clique em **New repository secret**
-4. Configure:
-   - **Name**: `TMDB_API_KEY`
-   - **Secret**: Cole sua API key do TMDB
-5. Clique em **Add secret**
+3. Adicione os seguintes secrets:
+
+#### Secret 1: TMDB_API_KEY
+- Clique em **New repository secret**
+- **Name**: `TMDB_API_KEY`
+- **Secret**: Cole sua API key do TMDB
+- Clique em **Add secret**
+
+#### Secret 2: TMDB_READ_ACCESS_TOKEN
+- Clique em **New repository secret**
+- **Name**: `TMDB_READ_ACCESS_TOKEN`
+- **Secret**: Cole seu Read Access Token do TMDB (também chamado de "API Read Access Token (v4 auth)")
+- Clique em **Add secret**
+
+#### Secret 3: GOOGLE_SHEETS_SCRIPT_ID
+- Clique em **New repository secret**
+- **Name**: `GOOGLE_SHEETS_SCRIPT_ID`
+- **Secret**: Cole apenas o ID do script (a parte entre `/s/` e `/exec` da URL)
+  - Exemplo: Se sua URL é `https://script.google.com/macros/s/ABC123XYZ/exec`
+  - Cole apenas: `ABC123XYZ`
+- Clique em **Add secret**
 
 ### Passo 3: Habilitar GitHub Pages
 
@@ -266,34 +353,44 @@ O arquivo `.github/workflows/deploy.yml` já está configurado. Quando você fiz
 1. O GitHub Actions irá automaticamente:
    - ✅ Instalar dependências
    - ✅ Executar todos os testes
-   - ✅ Criar o arquivo `config.js` com sua API key (de forma segura)
+   - ✅ Criar o arquivo `config.js` com suas credenciais (de forma segura):
+     - API key do TMDB
+     - Read Access Token do TMDB
+     - URL do Google Sheets Web App
    - ✅ Fazer deploy no GitHub Pages
 
 2. Aguarde alguns minutos e acesse: `https://seu-usuario.github.io/letterboxd-manager/`
 
+### Passo 5: Testar o Deploy
+
+Para testar se o deploy automático está funcionando:
+
+1. Faça uma pequena alteração no código (ex: adicione um comentário no README)
+2. Commit e push para a branch `main`:
+   ```bash
+   git add .
+   git commit -m "test: verificar deploy automático"
+   git push origin main
+   ```
+3. Vá para a aba **Actions** no seu repositório GitHub
+4. Você verá o workflow "Deploy to GitHub Pages" em execução
+5. Aguarde a conclusão (ícone verde ✓)
+6. Acesse sua URL do GitHub Pages para verificar as mudanças
+
+**Nota**: Você também pode testar em uma branch separada (como `develop`) antes de fazer merge para `main`. O deploy só acontece quando você faz push para `main`.
+
+Se houver erros:
+- Verifique se todos os secrets foram configurados corretamente
+- Verifique os logs do workflow na aba Actions
+- Certifique-se de que o GitHub Pages está habilitado nas configurações
+
 ### Como Funciona a Segurança
 
-- ✅ A API key fica armazenada como **Secret** no GitHub (criptografada)
-- ✅ O código-fonte no repositório **nunca** contém a API key
-- ✅ O GitHub Actions injeta a key apenas durante o build
-- ✅ Apenas você (dono do repositório) tem acesso ao Secret
+- ✅ Todas as credenciais ficam armazenadas como **Secrets** no GitHub (criptografadas)
+- ✅ O código-fonte no repositório **nunca** contém credenciais reais
+- ✅ O GitHub Actions injeta as credenciais apenas durante o build
+- ✅ Apenas você (dono do repositório) tem acesso aos Secrets
 - ✅ O arquivo `config.js` é gerado automaticamente no deploy
-
-### Primeiro Acesso Após Deploy
-
-Após o deploy, você precisará criar o usuário admin:
-
-1. Acesse a URL do GitHub Pages
-2. Abra o Console do Desenvolvedor (F12)
-3. Execute:
-
-```javascript
-// A aplicação cria automaticamente um usuário admin padrão
-// Username: admin
-// Password: admin
-```
-
-4. Faça login e **altere a senha imediatamente**!
 
 ### Opção Alternativa: Deploy Manual (Não Recomendado)
 

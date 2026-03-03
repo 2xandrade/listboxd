@@ -12,6 +12,10 @@ let userService;
 let tabManager;
 let filterManager;
 let watchedFilterManager;
+let googleSheetsApi;
+let filterChips;
+let streamingService;
+let infiniteScroll;
 let currentCategory = 'popular';
 let currentPage = 1;
 let totalPages = 1;
@@ -70,15 +74,43 @@ function debounce(func, wait) {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+  // Validate configuration
+  if (!CONFIG || !CONFIG.googleSheets || !CONFIG.googleSheets.apiUrl) {
+    console.error('❌ Configuração inválida: CONFIG.googleSheets.apiUrl não está definida');
+    notificationService.error('Erro de configuração: URL da API do Google Sheets não está definida. Verifique o arquivo config.js');
+    return;
+  }
+  
+  // Check if API URL is still the placeholder
+  if (CONFIG.googleSheets.apiUrl.includes('YOUR_SCRIPT_ID')) {
+    console.error('❌ Configuração inválida: URL da API do Google Sheets ainda está com o placeholder');
+    notificationService.error('Erro de configuração: Configure a URL da API do Google Sheets no arquivo config.js');
+    return;
+  }
+  
+  // Initialize Google Sheets API with URL from config
+  try {
+    googleSheetsApi = new GoogleSheetsApi(CONFIG.googleSheets.apiUrl);
+    console.log('✅ Google Sheets API inicializada com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao inicializar Google Sheets API:', error);
+    notificationService.error(`Erro ao inicializar API: ${error.message}`);
+    return;
+  }
+  
+  // Initialize services with dependencies
   storageManager = new StorageManager();
-  userService = new UserService(storageManager);
-  authService = new AuthService(storageManager, userService);
+  userService = new UserService(googleSheetsApi);
+  authService = new AuthService(storageManager, googleSheetsApi);
   filmService = new FilmService();
-  listService = new ListService(storageManager);
+  listService = new ListService(googleSheetsApi, authService);
   filterManager = new FilterManager(listService);
   watchedFilterManager = new FilterManager(listService);
   watchedFilterManager.storageKey = 'watched_filter_state'; // Use separate storage key
   tabManager = new TabManager(storageManager);
+  streamingService = new StreamingService();
+  
+  console.log('✅ Todos os serviços inicializados com sucesso');
   
   // Create default user if no users exist
   initializeDefaultUser();
@@ -137,9 +169,52 @@ function showLoginScreen() {
   const loginSection = document.getElementById('login-section');
   loginSection.classList.remove('hidden');
   
+  // Setup auth tab switching
+  setupAuthTabs();
+  
   // Setup login form handler
+  setupLoginForm();
+  
+  // Setup register form handler
+  setupRegisterForm();
+}
+
+/**
+ * Setup authentication tab switching
+ */
+function setupAuthTabs() {
+  const authTabs = document.querySelectorAll('.auth-tab');
+  const loginContainer = document.getElementById('login-form-container');
+  const registerContainer = document.getElementById('register-form-container');
+  
+  authTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Remove active class from all tabs
+      authTabs.forEach(t => t.classList.remove('active'));
+      
+      // Add active class to clicked tab
+      tab.classList.add('active');
+      
+      // Show/hide appropriate form
+      const tabType = tab.dataset.tab;
+      if (tabType === 'login') {
+        loginContainer.classList.remove('hidden');
+        registerContainer.classList.add('hidden');
+      } else if (tabType === 'register') {
+        loginContainer.classList.add('hidden');
+        registerContainer.classList.remove('hidden');
+      }
+    });
+  });
+}
+
+/**
+ * Setup login form handler
+ */
+function setupLoginForm() {
   const loginForm = document.getElementById('login-form');
   const loginError = document.getElementById('login-error');
+  const loginBtn = document.getElementById('login-btn');
   
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -149,16 +224,22 @@ function showLoginScreen() {
     loginError.textContent = '';
     
     // Get form values
-    const username = document.getElementById('login-username').value.trim();
+    const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
     
-    // Disable submit button during login
-    const loginBtn = document.getElementById('login-btn');
-    notificationService.setButtonLoading(loginBtn, true);
+    // Validate inputs
+    if (!email || !password) {
+      loginError.textContent = 'Por favor, preencha todos os campos.';
+      loginError.classList.remove('hidden');
+      return;
+    }
+    
+    // Set loading state
+    setButtonLoading(loginBtn, true);
     
     try {
       // Attempt login
-      await authService.login(username, password);
+      await authService.login(email, password);
       
       // Login successful - show success notification
       notificationService.success('Login realizado com sucesso!');
@@ -166,16 +247,121 @@ function showLoginScreen() {
       // Show authenticated UI
       showAuthenticatedUI();
     } catch (error) {
-      // Show error notification
-      const errorMessage = error.message === 'Invalid credentials' 
-        ? 'Usuário ou senha inválidos' 
-        : error.message;
-      notificationService.error(errorMessage);
+      // Show error message
+      loginError.textContent = error.message;
+      loginError.classList.remove('hidden');
       
-      // Re-enable submit button
-      notificationService.setButtonLoading(loginBtn, false);
+      // Also show notification for better visibility
+      notificationService.error(error.message);
+    } finally {
+      // Remove loading state
+      setButtonLoading(loginBtn, false);
     }
   });
+}
+
+/**
+ * Setup register form handler
+ */
+function setupRegisterForm() {
+  const registerForm = document.getElementById('register-form');
+  const registerError = document.getElementById('register-error');
+  const registerBtn = document.getElementById('register-btn');
+  
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Clear previous errors
+    registerError.classList.add('hidden');
+    registerError.textContent = '';
+    
+    // Get form values
+    const name = document.getElementById('register-name').value.trim();
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const passwordConfirm = document.getElementById('register-password-confirm').value;
+    
+    // Validate inputs
+    if (!name || !email || !password || !passwordConfirm) {
+      registerError.textContent = 'Por favor, preencha todos os campos.';
+      registerError.classList.remove('hidden');
+      return;
+    }
+    
+    if (password.length < 6) {
+      registerError.textContent = 'A senha deve ter no mínimo 6 caracteres.';
+      registerError.classList.remove('hidden');
+      return;
+    }
+    
+    if (password !== passwordConfirm) {
+      registerError.textContent = 'As senhas não coincidem.';
+      registerError.classList.remove('hidden');
+      return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      registerError.textContent = 'Por favor, insira um email válido.';
+      registerError.classList.remove('hidden');
+      return;
+    }
+    
+    // Set loading state
+    setButtonLoading(registerBtn, true);
+    
+    try {
+      // Attempt registration
+      await authService.register(name, email, password);
+      
+      // Registration successful - show success notification
+      notificationService.success('Conta criada com sucesso! Faça login para continuar.');
+      
+      // Switch to login tab
+      const loginTab = document.querySelector('.auth-tab[data-tab="login"]');
+      loginTab.click();
+      
+      // Pre-fill email in login form
+      document.getElementById('login-email').value = email;
+      document.getElementById('login-password').focus();
+      
+      // Clear registration form
+      registerForm.reset();
+    } catch (error) {
+      // Show error message
+      registerError.textContent = error.message;
+      registerError.classList.remove('hidden');
+      
+      // Also show notification for better visibility
+      notificationService.error(error.message);
+    } finally {
+      // Remove loading state
+      setButtonLoading(registerBtn, false);
+    }
+  });
+}
+
+/**
+ * Set button loading state
+ * @param {HTMLButtonElement} button - Button element
+ * @param {boolean} isLoading - Whether button is in loading state
+ */
+function setButtonLoading(button, isLoading) {
+  const btnText = button.querySelector('.btn-text');
+  const btnLoader = button.querySelector('.btn-loader');
+  
+  if (isLoading) {
+    button.classList.add('loading');
+    button.disabled = true;
+    if (btnText) btnText.classList.add('hidden');
+    if (btnLoader) btnLoader.classList.remove('hidden');
+  } else {
+    button.classList.remove('loading');
+    button.disabled = false;
+    if (btnText) btnText.classList.remove('hidden');
+    if (btnLoader) btnLoader.classList.add('hidden');
+  }
 }
 
 /**
@@ -259,14 +445,59 @@ function initializeFilmListing() {
   const searchBtn = document.getElementById('search-btn');
   const searchInput = document.getElementById('film-search');
   const tabButtons = document.querySelectorAll('.tab-btn');
-  const prevPageBtn = document.getElementById('prev-page-btn');
-  const nextPageBtn = document.getElementById('next-page-btn');
+  const filmsGrid = document.getElementById('films-grid');
 
   // Show film listing section
   filmListingSection.classList.remove('hidden');
 
   // Load initial films (popular)
   loadFilms('popular', 1);
+
+  // Initialize infinite scroll
+  infiniteScroll = new InfiniteScroll(filmsGrid, async () => {
+    // Check if there are more pages to load
+    if (currentPage >= totalPages) {
+      return false; // No more pages
+    }
+    
+    // Load next page
+    const nextPage = currentPage + 1;
+    
+    try {
+      // Show loading indicator
+      showInfiniteScrollLoading();
+      
+      let result;
+      if (currentSearchQuery) {
+        result = await filmService.searchFilms(currentSearchQuery, nextPage);
+      } else if (currentCategory === 'popular') {
+        result = await filmService.getPopularFilms(nextPage);
+      } else if (currentCategory === 'trending') {
+        result = await filmService.getTrendingFilms(nextPage);
+      }
+      
+      // Update pagination state
+      currentPage = nextPage;
+      totalPages = result.totalPages;
+      
+      // Append new films to grid
+      result.films.forEach(film => {
+        const filmCard = createFilmCard(film);
+        filmsGrid.appendChild(filmCard);
+      });
+      
+      // Hide loading indicator
+      hideInfiniteScrollLoading();
+      
+      // Return whether there are more pages
+      return currentPage < totalPages;
+    } catch (error) {
+      console.error('Error loading more films:', error);
+      hideInfiniteScrollLoading();
+      notificationService.error(`Erro ao carregar mais filmes: ${error.message}`);
+      return false;
+    }
+  });
 
   // Create debounced search function
   const debouncedSearch = debounce((query) => {
@@ -316,27 +547,6 @@ function initializeFilmListing() {
       loadFilms(category, 1);
     });
   });
-
-  // Pagination button handlers
-  prevPageBtn.addEventListener('click', () => {
-    if (currentPage > 1) {
-      if (currentSearchQuery) {
-        searchFilms(currentSearchQuery, currentPage - 1);
-      } else {
-        loadFilms(currentCategory, currentPage - 1);
-      }
-    }
-  });
-
-  nextPageBtn.addEventListener('click', () => {
-    if (currentPage < totalPages) {
-      if (currentSearchQuery) {
-        searchFilms(currentSearchQuery, currentPage + 1);
-      } else {
-        loadFilms(currentCategory, currentPage + 1);
-      }
-    }
-  });
 }
 
 /**
@@ -349,11 +559,17 @@ async function loadFilms(category, page = 1) {
   const loadingEl = document.getElementById('films-loading');
   const errorEl = document.getElementById('films-error');
 
-  // Show loading state
-  loadingEl.classList.remove('hidden');
+  // Show skeleton screens instead of loading text
+  loadingEl.classList.add('hidden');
   errorEl.classList.add('hidden');
-  filmsGrid.innerHTML = '';
+  SkeletonLoader.showSkeletons(filmsGrid, 12);
   hidePaginationControls();
+  hideInfiniteScrollLoading();
+
+  // Reset infinite scroll for new content
+  if (infiniteScroll) {
+    infiniteScroll.reset();
+  }
 
   try {
     let result;
@@ -368,17 +584,13 @@ async function loadFilms(category, page = 1) {
     totalPages = result.totalPages;
     currentSearchQuery = null;
 
-    // Hide loading
-    loadingEl.classList.add('hidden');
-
-    // Render films
+    // Render films (this will remove skeletons)
     renderFilms(result.films);
 
-    // Show pagination controls
-    updatePaginationControls();
+    // Pagination controls are no longer needed with infinite scroll
   } catch (error) {
-    // Hide loading and show error
-    loadingEl.classList.add('hidden');
+    // Clear skeletons and show error
+    filmsGrid.innerHTML = '';
     
     // Show error notification
     const errorMessage = `Erro ao carregar filmes: ${error.message}`;
@@ -399,11 +611,17 @@ async function searchFilms(query, page = 1) {
   const loadingEl = document.getElementById('films-loading');
   const errorEl = document.getElementById('films-error');
 
-  // Show loading state
-  loadingEl.classList.remove('hidden');
+  // Show skeleton screens instead of loading text
+  loadingEl.classList.add('hidden');
   errorEl.classList.add('hidden');
-  filmsGrid.innerHTML = '';
+  SkeletonLoader.showSkeletons(filmsGrid, 12);
   hidePaginationControls();
+  hideInfiniteScrollLoading();
+
+  // Reset infinite scroll for new search
+  if (infiniteScroll) {
+    infiniteScroll.reset();
+  }
 
   try {
     const result = await filmService.searchFilms(query, page);
@@ -413,21 +631,17 @@ async function searchFilms(query, page = 1) {
     totalPages = result.totalPages;
     currentSearchQuery = query;
 
-    // Hide loading
-    loadingEl.classList.add('hidden');
-
-    // Render films
+    // Render films (this will remove skeletons)
     if (result.films.length === 0) {
       filmsGrid.innerHTML = '<p style="color: #9ab; text-align: center; grid-column: 1 / -1;">Nenhum filme encontrado.</p>';
       notificationService.info('Nenhum filme encontrado para sua busca.');
     } else {
       renderFilms(result.films);
-      // Show pagination controls
-      updatePaginationControls();
+      // Pagination controls are no longer needed with infinite scroll
     }
   } catch (error) {
-    // Hide loading and show error
-    loadingEl.classList.add('hidden');
+    // Clear skeletons and show error
+    filmsGrid.innerHTML = '';
     
     // Show error notification
     const errorMessage = `Erro ao buscar filmes: ${error.message}`;
@@ -672,7 +886,7 @@ function handleModalEscape(e) {
  * @param {Object} film - Film object to add or remove
  * Requirements: 16.2, 16.3, 16.5
  */
-function handleAddOrRemoveFromList(film) {
+async function handleAddOrRemoveFromList(film) {
   try {
     // Get current authenticated user
     const currentUser = authService.getCurrentUser();
@@ -703,8 +917,17 @@ function handleAddOrRemoveFromList(film) {
         renderSharedList();
       }
     } else {
+      // Fetch streaming availability before adding (Requirement 10.1)
+      const streamingServices = await streamingService.getAvailability(film.id);
+      
+      // Attach streaming data to film object
+      const filmWithStreaming = {
+        ...film,
+        streamingServices: streamingServices
+      };
+      
       // Add film to list
-      listService.addFilmToList(film, currentUser.id, currentUser.username);
+      listService.addFilmToList(filmWithStreaming, currentUser.id, currentUser.username);
       
       // Show success notification
       notificationService.success(`"${film.title}" foi adicionado à lista compartilhada!`);
@@ -801,19 +1024,45 @@ function initializeSharedList() {
 function initializeFilterControls() {
   const genreFilter = document.getElementById('genre-filter');
   const nameFilter = document.getElementById('name-filter');
+  const streamingFilter = document.getElementById('streaming-filter');
+  const sortFilter = document.getElementById('sort-filter');
   const randomFilterBtn = document.getElementById('random-filter-btn');
   const clearFiltersBtn = document.getElementById('clear-filters-btn');
+  const filterChipsContainer = document.getElementById('filter-chips-container');
+
+  // Initialize FilterChips component (Requirement 11.1)
+  filterChips = new FilterChips(filterChipsContainer);
 
   // Populate genre dropdown
   populateGenreFilter();
   
+  // Populate streaming service dropdown
+  populateStreamingFilter();
+  
   // Restore filter state from persistence
   restoreFilterState();
+  
+  // Restore chips for active filters
+  restoreFilterChips();
 
   // Genre filter change handler - immediate update (Requirement 14.1)
   genreFilter.addEventListener('change', (e) => {
     const selectedGenre = e.target.value || null;
     filterManager.setGenreFilter(selectedGenre);
+    
+    // Update chips (Requirement 11.1)
+    if (selectedGenre) {
+      filterChips.addChip('genre', `Gênero: ${selectedGenre}`, (key) => {
+        // Remove filter when chip is clicked
+        filterManager.setGenreFilter(null);
+        genreFilter.value = '';
+        renderSharedList();
+        updateClearButtonState();
+      });
+    } else {
+      filterChips.removeChip('genre');
+    }
+    
     renderSharedList(); // Immediate update
     updateClearButtonState();
   });
@@ -821,6 +1070,20 @@ function initializeFilterControls() {
   // Name filter input handler (with debounce)
   const debouncedNameFilter = debounce((searchText) => {
     filterManager.setNameFilter(searchText || null);
+    
+    // Update chips (Requirement 11.1)
+    if (searchText) {
+      filterChips.addChip('name', `Busca: "${searchText}"`, (key) => {
+        // Remove filter when chip is clicked
+        filterManager.setNameFilter(null);
+        nameFilter.value = '';
+        renderSharedList();
+        updateClearButtonState();
+      });
+    } else {
+      filterChips.removeChip('name');
+    }
+    
     renderSharedList();
     updateClearButtonState();
   }, 300);
@@ -830,11 +1093,73 @@ function initializeFilterControls() {
     debouncedNameFilter(searchText);
   });
 
+  // Streaming filter change handler - immediate update (Requirement 11.3)
+  streamingFilter.addEventListener('change', (e) => {
+    const selectedService = e.target.value || null;
+    filterManager.setStreamingFilter(selectedService);
+    
+    // Update chips (Requirement 11.1)
+    if (selectedService) {
+      const service = streamingService.services[selectedService];
+      const serviceName = service ? service.name : selectedService;
+      filterChips.addChip('streaming', `Streaming: ${serviceName}`, (key) => {
+        // Remove filter when chip is clicked
+        filterManager.setStreamingFilter(null);
+        streamingFilter.value = '';
+        renderSharedList();
+        updateClearButtonState();
+      });
+    } else {
+      filterChips.removeChip('streaming');
+    }
+    
+    renderSharedList(); // Immediate update
+    updateClearButtonState();
+  });
+
+  // Sort filter change handler - immediate update (Requirement 11.2)
+  sortFilter.addEventListener('change', (e) => {
+    const sortBy = e.target.value;
+    filterManager.setSortBy(sortBy);
+    
+    // If random is selected, activate the random button
+    if (sortBy === 'random') {
+      randomFilterBtn.classList.add('active');
+      
+      // Update chips (Requirement 11.1)
+      filterChips.addChip('random', 'Ordem Aleatória', (key) => {
+        // Remove filter when chip is clicked
+        filterManager.setSortBy('dateAdded');
+        sortFilter.value = 'dateAdded';
+        randomFilterBtn.classList.remove('active');
+        renderSharedList();
+        updateClearButtonState();
+      });
+    } else {
+      randomFilterBtn.classList.remove('active');
+      filterChips.removeChip('random');
+    }
+    
+    renderSharedList(); // Immediate update
+    updateClearButtonState();
+  });
+
   // Random filter button handler - generates new order each click (Requirement 14.2)
   randomFilterBtn.addEventListener('click', () => {
-    // Always enable random filter and generate new order
-    filterManager.setRandomFilter(true);
+    // Set sort to random
+    filterManager.setSortBy('random');
+    sortFilter.value = 'random';
     randomFilterBtn.classList.add('active');
+    
+    // Update chips (Requirement 11.1)
+    filterChips.addChip('random', 'Ordem Aleatória', (key) => {
+      // Remove filter when chip is clicked
+      filterManager.setSortBy('dateAdded');
+      sortFilter.value = 'dateAdded';
+      randomFilterBtn.classList.remove('active');
+      renderSharedList();
+      updateClearButtonState();
+    });
     
     renderSharedList(); // This will generate a new random order
     updateClearButtonState();
@@ -845,9 +1170,14 @@ function initializeFilterControls() {
     // Clear all filters
     filterManager.clearAllFilters();
     
+    // Clear all chips (Requirement 11.1)
+    filterChips.clearAll();
+    
     // Reset UI controls
     genreFilter.value = '';
     nameFilter.value = '';
+    streamingFilter.value = '';
+    sortFilter.value = 'dateAdded';
     randomFilterBtn.classList.remove('active');
     
     // Re-render list
@@ -867,6 +1197,8 @@ function initializeFilterControls() {
 function restoreFilterState() {
   const genreFilter = document.getElementById('genre-filter');
   const nameFilter = document.getElementById('name-filter');
+  const streamingFilter = document.getElementById('streaming-filter');
+  const sortFilter = document.getElementById('sort-filter');
   const randomFilterBtn = document.getElementById('random-filter-btn');
   
   const activeFilters = filterManager.getActiveFilters();
@@ -881,9 +1213,74 @@ function restoreFilterState() {
     nameFilter.value = activeFilters.name;
   }
   
+  // Restore streaming filter
+  if (activeFilters.streaming) {
+    streamingFilter.value = activeFilters.streaming;
+  }
+  
+  // Restore sort filter
+  if (activeFilters.sortBy) {
+    sortFilter.value = activeFilters.sortBy;
+  }
+  
   // Restore random filter
-  if (activeFilters.random) {
+  if (activeFilters.random || activeFilters.sortBy === 'random') {
     randomFilterBtn.classList.add('active');
+  }
+}
+
+/**
+ * Restore filter chips from active filters
+ * Requirements: 11.1
+ */
+function restoreFilterChips() {
+  const genreFilter = document.getElementById('genre-filter');
+  const nameFilter = document.getElementById('name-filter');
+  const streamingFilter = document.getElementById('streaming-filter');
+  const randomFilterBtn = document.getElementById('random-filter-btn');
+  
+  const activeFilters = filterManager.getActiveFilters();
+  
+  // Restore genre chip
+  if (activeFilters.genre) {
+    filterChips.addChip('genre', `Gênero: ${activeFilters.genre}`, (key) => {
+      filterManager.setGenreFilter(null);
+      genreFilter.value = '';
+      renderSharedList();
+      updateClearButtonState();
+    });
+  }
+  
+  // Restore name chip
+  if (activeFilters.name) {
+    filterChips.addChip('name', `Busca: "${activeFilters.name}"`, (key) => {
+      filterManager.setNameFilter(null);
+      nameFilter.value = '';
+      renderSharedList();
+      updateClearButtonState();
+    });
+  }
+  
+  // Restore streaming chip
+  if (activeFilters.streaming) {
+    const service = streamingService.services[activeFilters.streaming];
+    const serviceName = service ? service.name : activeFilters.streaming;
+    filterChips.addChip('streaming', `Streaming: ${serviceName}`, (key) => {
+      filterManager.setStreamingFilter(null);
+      streamingFilter.value = '';
+      renderSharedList();
+      updateClearButtonState();
+    });
+  }
+  
+  // Restore random chip
+  if (activeFilters.random) {
+    filterChips.addChip('random', 'Ordem Aleatória', (key) => {
+      filterManager.setRandomFilter(false);
+      randomFilterBtn.classList.remove('active');
+      renderSharedList();
+      updateClearButtonState();
+    });
   }
 }
 
@@ -905,6 +1302,28 @@ function populateGenreFilter() {
     option.value = genre;
     option.textContent = genre;
     genreFilter.appendChild(option);
+  });
+}
+
+/**
+ * Populate streaming filter dropdown with available services
+ * Requirements: 10.1
+ */
+function populateStreamingFilter() {
+  const streamingFilter = document.getElementById('streaming-filter');
+  const services = streamingService.getAllServices();
+
+  // Clear existing options (except the first "All services" option)
+  while (streamingFilter.options.length > 1) {
+    streamingFilter.remove(1);
+  }
+
+  // Add streaming service options
+  services.forEach(service => {
+    const option = document.createElement('option');
+    option.value = service.key;
+    option.textContent = `${service.icon} ${service.name}`;
+    streamingFilter.appendChild(option);
   });
 }
 
@@ -947,7 +1366,7 @@ function updateFilterCount() {
 
 /**
  * Render the shared list
- * Requirements: 14.4
+ * Requirements: 14.4, 12.1
  */
 function renderSharedList() {
   const container = document.getElementById('shared-list-container');
@@ -957,39 +1376,45 @@ function renderSharedList() {
     return;
   }
   
-  // Get filtered entries from filter manager
-  const entries = filterManager.applyFilters();
+  // Show skeleton screens during loading (Requirement 12.1)
+  SkeletonLoader.showListSkeletons(container, 6);
   
-  // Update genre filter options (in case new genres were added)
-  populateGenreFilter();
-  
-  // Update filter count display (Requirement 14.4)
-  updateFilterCount();
-  
-  // Clear container
-  container.innerHTML = '';
-  
-  // Handle empty list
-  if (entries.length === 0) {
-    const emptyMessage = document.createElement('div');
-    emptyMessage.className = 'empty-message';
+  // Use setTimeout to allow skeleton to render before processing data
+  setTimeout(() => {
+    // Get filtered entries from filter manager
+    const entries = filterManager.applyFilters();
     
-    // Check if filters are active
-    if (filterManager.hasActiveFilters()) {
-      emptyMessage.textContent = 'Nenhum filme encontrado com os filtros aplicados.';
-    } else {
-      emptyMessage.textContent = 'A lista compartilhada está vazia. Adicione filmes para começar!';
+    // Update genre filter options (in case new genres were added)
+    populateGenreFilter();
+    
+    // Update filter count display (Requirement 14.4)
+    updateFilterCount();
+    
+    // Clear container (removes skeletons)
+    container.innerHTML = '';
+    
+    // Handle empty list
+    if (entries.length === 0) {
+      const emptyMessage = document.createElement('div');
+      emptyMessage.className = 'empty-message';
+      
+      // Check if filters are active
+      if (filterManager.hasActiveFilters()) {
+        emptyMessage.textContent = 'Nenhum filme encontrado com os filtros aplicados.';
+      } else {
+        emptyMessage.textContent = 'A lista compartilhada está vazia. Adicione filmes para começar!';
+      }
+      
+      container.appendChild(emptyMessage);
+      return;
     }
     
-    container.appendChild(emptyMessage);
-    return;
-  }
-  
-  // Render each entry
-  entries.forEach(entry => {
-    const entryElement = createListEntryElement(entry);
-    container.appendChild(entryElement);
-  });
+    // Render each entry
+    entries.forEach(entry => {
+      const entryElement = createListEntryElement(entry);
+      container.appendChild(entryElement);
+    });
+  }, 100); // Small delay to show skeleton briefly
 }
 
 /**
@@ -1029,6 +1454,11 @@ function createListEntryElement(entry) {
   // Year
   const yearText = entry.film.year ? `(${entry.film.year})` : '';
   
+  // Streaming badges (Requirements 10.2, 10.3, 10.4)
+  const streamingBadgesHTML = entry.film.streamingServices && entry.film.streamingServices.length > 0
+    ? `<div class="streaming-badges">${streamingService.createBadges(entry.film.streamingServices)}</div>`
+    : '';
+  
   // Get current user to check admin status (Requirement 12.8)
   const currentUser = authService.getCurrentUser();
   const isAdmin = currentUser && currentUser.isAdmin;
@@ -1052,6 +1482,7 @@ function createListEntryElement(entry) {
         <span class="film-year">${escapeHtml(yearText)}</span>
       </div>
       <div class="film-genres">${escapeHtml(genresText)}</div>
+      ${streamingBadgesHTML}
       ${overviewHTML}
       <div class="entry-metadata">
         <span class="entry-user">Adicionado por: ${escapeHtml(entry.addedBy)}</span>
@@ -1316,6 +1747,7 @@ function initializeWatchedFilms() {
 function initializeWatchedFilterControls() {
   const genreFilter = document.getElementById('watched-genre-filter');
   const nameFilter = document.getElementById('watched-name-filter');
+  const sortFilter = document.getElementById('watched-sort-filter');
   const randomFilterBtn = document.getElementById('watched-random-filter-btn');
   const clearFiltersBtn = document.getElementById('watched-clear-filters-btn');
 
@@ -1345,10 +1777,27 @@ function initializeWatchedFilterControls() {
     debouncedNameFilter(searchText);
   });
 
+  // Sort filter change handler - immediate update
+  sortFilter.addEventListener('change', (e) => {
+    const sortBy = e.target.value;
+    watchedFilterManager.setSortBy(sortBy);
+    
+    // If random is selected, activate the random button
+    if (sortBy === 'random') {
+      randomFilterBtn.classList.add('active');
+    } else {
+      randomFilterBtn.classList.remove('active');
+    }
+    
+    renderWatchedFilms(); // Immediate update
+    updateWatchedClearButtonState();
+  });
+
   // Random filter button handler - generates new order each click
   randomFilterBtn.addEventListener('click', () => {
-    // Always enable random filter and generate new order
-    watchedFilterManager.setRandomFilter(true);
+    // Set sort to random
+    watchedFilterManager.setSortBy('random');
+    sortFilter.value = 'random';
     randomFilterBtn.classList.add('active');
     
     renderWatchedFilms(); // This will generate a new random order
@@ -1363,6 +1812,7 @@ function initializeWatchedFilterControls() {
     // Reset UI controls
     genreFilter.value = '';
     nameFilter.value = '';
+    sortFilter.value = 'dateAdded';
     randomFilterBtn.classList.remove('active');
     
     // Re-render list
@@ -1381,6 +1831,7 @@ function initializeWatchedFilterControls() {
 function restoreWatchedFilterState() {
   const genreFilter = document.getElementById('watched-genre-filter');
   const nameFilter = document.getElementById('watched-name-filter');
+  const sortFilter = document.getElementById('watched-sort-filter');
   const randomFilterBtn = document.getElementById('watched-random-filter-btn');
   
   const activeFilters = watchedFilterManager.getActiveFilters();
@@ -1395,8 +1846,13 @@ function restoreWatchedFilterState() {
     nameFilter.value = activeFilters.name;
   }
   
+  // Restore sort filter
+  if (activeFilters.sortBy) {
+    sortFilter.value = activeFilters.sortBy;
+  }
+  
   // Restore random filter
-  if (activeFilters.random) {
+  if (activeFilters.random || activeFilters.sortBy === 'random') {
     randomFilterBtn.classList.add('active');
   }
 }
@@ -1654,6 +2110,26 @@ function updatePaginationControls() {
 function hidePaginationControls() {
   const paginationControls = document.getElementById('pagination-controls');
   paginationControls.classList.add('hidden');
+}
+
+/**
+ * Show infinite scroll loading indicator
+ */
+function showInfiniteScrollLoading() {
+  const loadingIndicator = document.getElementById('infinite-scroll-loading');
+  if (loadingIndicator) {
+    loadingIndicator.classList.remove('hidden');
+  }
+}
+
+/**
+ * Hide infinite scroll loading indicator
+ */
+function hideInfiniteScrollLoading() {
+  const loadingIndicator = document.getElementById('infinite-scroll-loading');
+  if (loadingIndicator) {
+    loadingIndicator.classList.add('hidden');
+  }
 }
 
 /**

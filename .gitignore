@@ -11,6 +11,7 @@ node_modules/
 *.swp
 *.swo
 *~
+.kiro/
 
 # OS files
 .DS_Store
@@ -23,4 +24,3 @@ Thumbs.db
 dist/
 build/
 
-.kiro

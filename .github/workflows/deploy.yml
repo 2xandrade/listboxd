@@ -36,7 +36,7 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Create config.js with API key
+      - name: Create config.js with API credentials
         run: |
           cat > config.js << EOF
           // Letterboxd Manager Configuration
@@ -46,6 +46,9 @@ jobs:
                   readAccessToken: '${{ secrets.TMDB_READ_ACCESS_TOKEN }}',
                   baseUrl: 'https://api.themoviedb.org/3',
                   imageBaseUrl: 'https://image.tmdb.org/t/p/w500'
+              },
+              googleSheets: {
+                  apiUrl: 'https://script.google.com/macros/s/${{ secrets.GOOGLE_SHEETS_SCRIPT_ID }}/exec'
               },
               app: {
                   sessionTimeout: 3600000,

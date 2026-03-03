@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Filter Chips Integration</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid var(--color-accent-blue);
+            border-radius: var(--radius-md);
+        }
+        .test-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .test-controls button {
+            padding: 0.5rem 1rem;
+        }
+        .test-controls input,
+        .test-controls select {
+            padding: 0.5rem;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Filter Chips Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>Filter Chips Container</h2>
+        <div id="filter-chips-container" class="filter-chips-container hidden"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <div class="test-controls">
+            <select id="genre-filter">
+                <option value="">Todos os gêneros</option>
+                <option value="Ação">Ação</option>
+                <option value="Comédia">Comédia</option>
+                <option value="Drama">Drama</option>
+                <option value="Ficção Científica">Ficção Científica</option>
+            </select>
+            
+            <input type="text" id="name-filter" placeholder="Buscar por nome..." />
+            
+            <button id="random-filter-btn">🎲 Ordem Aleatória</button>
+            
+            <button id="clear-filters-btn">✕ Limpar Filtros</button>
+        </div>
+        
+        <div class="test-controls">
+            <button id="test-add-genre">Add Genre Chip</button>
+            <button id="test-add-name">Add Name Chip</button>
+            <button id="test-add-random">Add Random Chip</button>
+            <button id="test-clear-all">Clear All Chips</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Status</h2>
+        <div id="status"></div>
+    </div>
+
+    <script src="js/filter-chips.js"></script>
+    <script>
+        // Initialize FilterChips
+        const container = document.getElementById('filter-chips-container');
+        const filterChips = new FilterChips(container);
+        const statusDiv = document.getElementById('status');
+        
+        function updateStatus(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            statusDiv.innerHTML = `<p>[${timestamp}] ${message}</p>` + statusDiv.innerHTML;
+        }
+        
+        // Test controls
+        const genreFilter = document.getElementById('genre-filter');
+        const nameFilter = document.getElementById('name-filter');
+        const randomFilterBtn = document.getElementById('random-filter-btn');
+        const clearFiltersBtn = document.getElementById('clear-filters-btn');
+        
+        // Genre filter handler
+        genreFilter.addEventListener('change', (e) => {
+            const selectedGenre = e.target.value;
+            if (selectedGenre) {
+                filterChips.addChip('genre', `Gênero: ${selectedGenre}`, (key) => {
+                    updateStatus(`Chip removed via X button: ${key}`);
+                    genreFilter.value = '';
+                });
+                updateStatus(`Genre filter applied: ${selectedGenre}`);
+            } else {
+                filterChips.removeChip('genre');
+                updateStatus('Genre filter cleared');
+            }
+        });
+        
+        // Name filter handler (with simple debounce)
+        let nameTimeout;
+        nameFilter.addEventListener('input', (e) => {
+            clearTimeout(nameTimeout);
+            const searchText = e.target.value.trim();
+            
+            nameTimeout = setTimeout(() => {
+                if (searchText) {
+                    filterChips.addChip('name', `Busca: "${searchText}"`, (key) => {
+                        updateStatus(`Chip removed via X button: ${key}`);
+                        nameFilter.value = '';
+                    });
+                    updateStatus(`Name filter applied: ${searchText}`);
+                } else {
+                    filterChips.removeChip('name');
+                    updateStatus('Name filter cleared');
+                }
+            }, 300);
+        });
+        
+        // Random filter handler
+        randomFilterBtn.addEventListener('click', () => {
+            filterChips.addChip('random', 'Ordem Aleatória', (key) => {
+                updateStatus(`Chip removed via X button: ${key}`);
+                randomFilterBtn.classList.remove('active');
+            });
+            randomFilterBtn.classList.add('active');
+            updateStatus('Random filter applied');
+        });
+        
+        // Clear filters handler
+        clearFiltersBtn.addEventListener('click', () => {
+            filterChips.clearAll();
+            genreFilter.value = '';
+            nameFilter.value = '';
+            randomFilterBtn.classList.remove('active');
+            updateStatus('All filters cleared');
+        });
+        
+        // Direct test buttons
+        document.getElementById('test-add-genre').addEventListener('click', () => {
+            filterChips.addChip('test-genre', 'Test Genre', (key) => {
+                updateStatus(`Test chip removed: ${key}`);
+            });
+            updateStatus('Test genre chip added');
+        });
+        
+        document.getElementById('test-add-name').addEventListener('click', () => {
+            filterChips.addChip('test-name', 'Test Name', (key) => {
+                updateStatus(`Test chip removed: ${key}`);
+            });
+            updateStatus('Test name chip added');
+        });
+        
+        document.getElementById('test-add-random').addEventListener('click', () => {
+            filterChips.addChip('test-random', 'Test Random', (key) => {
+                updateStatus(`Test chip removed: ${key}`);
+            });
+            updateStatus('Test random chip added');
+        });
+        
+        document.getElementById('test-clear-all').addEventListener('click', () => {
+            filterChips.clearAll();
+            updateStatus('All test chips cleared');
+        });
+        
+        updateStatus('Filter Chips Integration Test initialized');
+    </script>
+</body>
+</html>

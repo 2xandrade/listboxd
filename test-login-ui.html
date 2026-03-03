@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login UI</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            padding: 2rem;
+        }
+        .test-info {
+            background: #2c3440;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            color: #a8b5c7;
+        }
+        .test-info h2 {
+            color: #00c030;
+            margin-bottom: 1rem;
+        }
+        .test-info ul {
+            margin-left: 1.5rem;
+        }
+        .test-info li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h2>✅ Task 8 Implementation Test</h2>
+        <p>This page demonstrates the updated login interface with the following features:</p>
+        <ul>
+            <li>✅ Login form now uses email instead of username</li>
+            <li>✅ Registration form with name, email, password, and password confirmation fields</li>
+            <li>✅ Tab switching between Login and Registration forms</li>
+            <li>✅ Loading states on buttons during async operations</li>
+            <li>✅ Improved error messages with specific feedback</li>
+            <li>✅ Form validation (email format, password length, password match)</li>
+            <li>✅ Smooth animations and transitions</li>
+        </ul>
+    </div>
+
+    <section id="login-section">
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Login</button>
+                <button class="auth-tab" data-tab="register">Cadastro</button>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="login-form-container" class="auth-form-container">
+                <h2>Entrar</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" name="email" required autocomplete="email" placeholder="seu@email.com" />
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Senha</label>
+                        <input type="password" id="login-password" name="password" required autocomplete="current-password" placeholder="••••••••" />
+                    </div>
+                    <div id="login-error" class="error-message hidden">Erro de exemplo</div>
+                    <button type="submit" id="login-btn" class="auth-btn">
+                        <span class="btn-text">Entrar</span>
+                        <span class="btn-loader hidden">Carregando...</span>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="register-form-container" class="auth-form-container hidden">
+                <h2>Criar Conta</h2>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="register-name">Nome</label>
+                        <input type="text" id="register-name" name="name" required autocomplete="name" placeholder="Seu nome completo" />
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" name="email" required autocomplete="email" placeholder="seu@email.com" />
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Senha</label>
+                        <input type="password" id="register-password" name="password" required autocomplete="new-password" placeholder="Mínimo 6 caracteres" minlength="6" />
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password-confirm">Confirmar Senha</label>
+                        <input type="password" id="register-password-confirm" name="password-confirm" required autocomplete="new-password" placeholder="Digite a senha novamente" minlength="6" />
+                    </div>
+                    <div id="register-error" class="error-message hidden">Erro de exemplo</div>
+                    <button type="submit" id="register-btn" class="auth-btn">
+                        <span class="btn-text">Criar Conta</span>
+                        <span class="btn-loader hidden">Carregando...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Simple tab switching demo
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const tabType = tab.dataset.tab;
+                if (tabType === 'login') {
+                    document.getElementById('login-form-container').classList.remove('hidden');
+                    document.getElementById('register-form-container').classList.add('hidden');
+                } else {
+                    document.getElementById('login-form-container').classList.add('hidden');
+                    document.getElementById('register-form-container').classList.remove('hidden');
+                }
+            });
+        });
+
+        // Demo loading state
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            const error = document.getElementById('login-error');
+            
+            btn.classList.add('loading');
+            btn.disabled = true;
+            error.classList.add('hidden');
+            
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                error.textContent = 'Email ou senha inválidos.';
+                error.classList.remove('hidden');
+            }, 1500);
+        });
+
+        document.getElementById('register-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('register-btn');
+            const error = document.getElementById('register-error');
+            
+            const password = document.getElementById('register-password').value;
+            const passwordConfirm = document.getElementById('register-password-confirm').value;
+            
+            if (password !== passwordConfirm) {
+                error.textContent = 'As senhas não coincidem.';
+                error.classList.remove('hidden');
+                return;
+            }
+            
+            btn.classList.add('loading');
+            btn.disabled = true;
+            error.classList.add('hidden');
+            
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                alert('Conta criada com sucesso! (Demo)');
+            }, 1500);
+        });
+    </script>
+</body>
+</html>

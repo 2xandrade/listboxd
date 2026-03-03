@@ -11,6 +11,13 @@ const CONFIG = {
         imageBaseUrl: 'https://image.tmdb.org/t/p/w500'
     },
     
+    // Google Sheets API Configuration
+    // Get your Web App URL after deploying the Apps Script
+    // See: .kiro/specs/google-sheets-integration/QUICK-START.md
+    googleSheets: {
+        apiUrl: 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec'
+    },
+    
     // Application Settings
     app: {
         sessionTimeout: 3600000, // 1 hour in milliseconds

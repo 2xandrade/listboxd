@@ -1,10 +1,10 @@
 /**
  * AuthService - Authentication and session management
  * Handles user login, logout, session persistence, and admin privilege verification
- * Requirements: 1.5, 2.1, 2.2, 2.3, 2.4
+ * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 7.1, 7.2, 7.3, 7.4, 7.5
  */
 
-// Import bcryptjs for password hashing
+// Import bcryptjs for password hashing (kept for backward compatibility with tests)
 let bcrypt;
 if (typeof window !== 'undefined' && window.dcodeIO?.bcrypt) {
   bcrypt = window.dcodeIO.bcrypt;
@@ -15,9 +15,9 @@ if (typeof window !== 'undefined' && window.dcodeIO?.bcrypt) {
 }
 
 class AuthService {
-  constructor(storageManager, userService) {
+  constructor(storageManager, googleSheetsApi) {
     this.storageManager = storageManager;
-    this.userService = userService;
+    this.googleSheetsApi = googleSheetsApi;
     this.SESSION_KEY = 'letterboxd_session';
     this.SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   }
@@ -43,46 +43,98 @@ class AuthService {
   }
 
   /**
-   * Authenticate user with username and password
-   * @param {string} username - Username
+   * Authenticate user with email and password via Google Sheets API
+   * @param {string} email - User email
    * @param {string} password - Plain text password
    * @returns {Promise<Object>} User object if successful
    * @throws {Error} If authentication fails
    */
-  async login(username, password) {
-    // Get all users
-    const users = this.userService.getAllUsers();
-    
-    // Find user by username
-    const user = users.find(u => u.username === username);
-    
-    if (!user) {
-      throw new Error('Invalid credentials');
+  async login(email, password) {
+    try {
+      // Call Google Sheets API for authentication
+      const response = await this.googleSheetsApi.login({
+        email: email,
+        senha: password
+      });
+      
+      // Create local session with user data from API
+      const session = {
+        userId: response.data.id_usuario,
+        username: response.data.nome,
+        email: response.data.email,
+        isAdmin: response.data.is_admin || false,
+        loginTime: Date.now(),
+        expiresAt: Date.now() + this.SESSION_TIMEOUT
+      };
+      
+      // Save session to localStorage
+      this.storageManager.save(this.SESSION_KEY, session);
+      
+      // Return user without sensitive data
+      return {
+        id: session.userId,
+        username: session.username,
+        email: session.email,
+        isAdmin: session.isAdmin
+      };
+    } catch (error) {
+      // Provide user-friendly error messages
+      if (error.message.includes('Network') || error.message.includes('fetch')) {
+        throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
+      } else if (error.message.includes('Invalid') || error.message.includes('credentials')) {
+        throw new Error('Email ou senha inválidos.');
+      } else if (error.message.includes('401')) {
+        throw new Error('Credenciais inválidas.');
+      } else if (error.message.includes('429')) {
+        throw new Error('Muitas tentativas. Aguarde um momento e tente novamente.');
+      } else if (error.message.includes('500') || error.message.includes('503')) {
+        throw new Error('Erro no servidor. Tente novamente mais tarde.');
+      } else {
+        throw new Error(`Falha no login: ${error.message}`);
+      }
     }
-    
-    // Verify password
-    if (!this.verifyPassword(password, user.passwordHash)) {
-      throw new Error('Invalid credentials');
+  }
+
+  /**
+   * Register new user via Google Sheets API
+   * @param {string} nome - User name
+   * @param {string} email - User email
+   * @param {string} password - Plain text password
+   * @returns {Promise<Object>} Created user object
+   * @throws {Error} If registration fails
+   */
+  async register(nome, email, password) {
+    try {
+      // Call Google Sheets API to register user
+      const response = await this.googleSheetsApi.registerUser({
+        nome: nome,
+        email: email,
+        senha: password
+      });
+      
+      // Return created user data
+      return {
+        id: response.data.id_usuario,
+        nome: response.data.nome,
+        email: response.data.email,
+        isAdmin: response.data.is_admin || false
+      };
+    } catch (error) {
+      // Provide user-friendly error messages
+      if (error.message.includes('Network') || error.message.includes('fetch')) {
+        throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
+      } else if (error.message.includes('já existe') || error.message.includes('already exists')) {
+        throw new Error('Este email já está cadastrado.');
+      } else if (error.message.includes('400')) {
+        throw new Error('Dados inválidos. Verifique os campos e tente novamente.');
+      } else if (error.message.includes('429')) {
+        throw new Error('Muitas tentativas. Aguarde um momento e tente novamente.');
+      } else if (error.message.includes('500') || error.message.includes('503')) {
+        throw new Error('Erro no servidor. Tente novamente mais tarde.');
+      } else {
+        throw new Error(`Falha no registro: ${error.message}`);
+      }
     }
-    
-    // Create session
-    const session = {
-      userId: user.id,
-      username: user.username,
-      isAdmin: user.isAdmin,
-      loginTime: Date.now(),
-      expiresAt: Date.now() + this.SESSION_TIMEOUT
-    };
-    
-    // Save session to storage
-    this.storageManager.save(this.SESSION_KEY, session);
-    
-    // Return user without password hash
-    return {
-      id: user.id,
-      username: user.username,
-      isAdmin: user.isAdmin
-    };
   }
 
   /**
@@ -112,6 +164,7 @@ class AuthService {
     return {
       id: session.userId,
       username: session.username,
+      email: session.email,
       isAdmin: session.isAdmin
     };
   }

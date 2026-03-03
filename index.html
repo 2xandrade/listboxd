@@ -20,20 +20,59 @@
 
             <!-- Login Section -->
             <section id="login-section" class="hidden">
-                <div class="login-container">
-                    <h2>Login</h2>
-                    <form id="login-form">
-                        <div class="form-group">
-                            <label for="login-username">Usuário</label>
-                            <input type="text" id="login-username" name="username" required autocomplete="username" />
-                        </div>
-                        <div class="form-group">
-                            <label for="login-password">Senha</label>
-                            <input type="password" id="login-password" name="password" required autocomplete="current-password" />
-                        </div>
-                        <div id="login-error" class="error hidden"></div>
-                        <button type="submit" id="login-btn">Entrar</button>
-                    </form>
+                <div class="auth-container">
+                    <div class="auth-tabs">
+                        <button class="auth-tab active" data-tab="login">Login</button>
+                        <button class="auth-tab" data-tab="register">Cadastro</button>
+                    </div>
+                    
+                    <!-- Login Form -->
+                    <div id="login-form-container" class="auth-form-container">
+                        <h2>Entrar</h2>
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="login-email">Email</label>
+                                <input type="email" id="login-email" name="email" required autocomplete="email" placeholder="seu@email.com" />
+                            </div>
+                            <div class="form-group">
+                                <label for="login-password">Senha</label>
+                                <input type="password" id="login-password" name="password" required autocomplete="current-password" placeholder="••••••••" />
+                            </div>
+                            <div id="login-error" class="error-message hidden"></div>
+                            <button type="submit" id="login-btn" class="auth-btn">
+                                <span class="btn-text">Entrar</span>
+                                <span class="btn-loader hidden">Carregando...</span>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Register Form -->
+                    <div id="register-form-container" class="auth-form-container hidden">
+                        <h2>Criar Conta</h2>
+                        <form id="register-form">
+                            <div class="form-group">
+                                <label for="register-name">Nome</label>
+                                <input type="text" id="register-name" name="name" required autocomplete="name" placeholder="Seu nome completo" />
+                            </div>
+                            <div class="form-group">
+                                <label for="register-email">Email</label>
+                                <input type="email" id="register-email" name="email" required autocomplete="email" placeholder="seu@email.com" />
+                            </div>
+                            <div class="form-group">
+                                <label for="register-password">Senha</label>
+                                <input type="password" id="register-password" name="password" required autocomplete="new-password" placeholder="Mínimo 6 caracteres" minlength="6" />
+                            </div>
+                            <div class="form-group">
+                                <label for="register-password-confirm">Confirmar Senha</label>
+                                <input type="password" id="register-password-confirm" name="password-confirm" required autocomplete="new-password" placeholder="Digite a senha novamente" minlength="6" />
+                            </div>
+                            <div id="register-error" class="error-message hidden"></div>
+                            <button type="submit" id="register-btn" class="auth-btn">
+                                <span class="btn-text">Criar Conta</span>
+                                <span class="btn-loader hidden">Carregando...</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </section>
 
@@ -64,6 +103,11 @@
                 <!-- Films Grid -->
                 <div id="films-grid" class="films-grid"></div>
 
+                <!-- Infinite Scroll Loading Indicator -->
+                <div id="infinite-scroll-loading" class="infinite-scroll-loading hidden">
+                    <div class="loading-spinner"></div>
+                </div>
+
                 <!-- Pagination Controls -->
                 <div id="pagination-controls" class="pagination-controls hidden">
                     <button id="prev-page-btn" class="pagination-btn">← Anterior</button>
@@ -75,6 +119,9 @@
             <!-- Shared List Section -->
             <section id="shared-list" class="hidden">
                 <h2>Lista Compartilhada</h2>
+                
+                <!-- Filter Chips Container -->
+                <div id="filter-chips-container" class="filter-chips-container hidden"></div>
                 
                 <!-- Filter Controls -->
                 <div id="filter-controls" class="filter-controls">
@@ -88,6 +135,23 @@
                     <div class="filter-group">
                         <label for="name-filter">Buscar por nome:</label>
                         <input type="text" id="name-filter" class="filter-input" placeholder="Digite o nome do filme..." />
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="streaming-filter">Filtrar por streaming:</label>
+                        <select id="streaming-filter" class="filter-select">
+                            <option value="">Todos os serviços</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="sort-filter">Ordenar por:</label>
+                        <select id="sort-filter" class="filter-select">
+                            <option value="dateAdded">Data de Adição</option>
+                            <option value="rating">Avaliação</option>
+                            <option value="year">Ano de Lançamento</option>
+                            <option value="random">Aleatório</option>
+                        </select>
                     </div>
                     
                     <div class="filter-group">
@@ -121,6 +185,16 @@
                     <div class="filter-group">
                         <label for="watched-name-filter">Buscar por nome:</label>
                         <input type="text" id="watched-name-filter" class="filter-input" placeholder="Digite o nome do filme..." />
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="watched-sort-filter">Ordenar por:</label>
+                        <select id="watched-sort-filter" class="filter-select">
+                            <option value="dateAdded">Data de Adição</option>
+                            <option value="rating">Avaliação</option>
+                            <option value="year">Ano de Lançamento</option>
+                            <option value="random">Aleatório</option>
+                        </select>
                     </div>
                     
                     <div class="filter-group">
@@ -214,6 +288,10 @@
     <script src="js/films.js"></script>
     <script src="js/list.js"></script>
     <script src="js/filters.js"></script>
+    <script src="js/filter-chips.js"></script>
+    <script src="js/skeleton.js"></script>
+    <script src="js/streaming.js"></script>
+    <script src="js/infinite-scroll.js"></script>
     <script src="js/tabs.js"></script>
     <script src="js/app.js"></script>
 </body>
