@@ -115,8 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize keyboard shortcuts
   initializeKeyboardShortcuts();
   
-  // Create default user if no users exist
-  initializeDefaultUser();
+  // Note: Default user creation is now handled by the backend API
+  // No need to create users on the frontend
   
   // Implement route protection - check authentication on page load
   checkAuthenticationAndRedirect();
@@ -175,24 +175,12 @@ function initializeKeyboardShortcuts() {
 
 /**
  * Initialize default user if no users exist
+ * NOTE: This function is deprecated - user creation is now handled by the backend API
  */
 function initializeDefaultUser() {
-  const users = userService.getAllUsers();
-  
-  // If no users exist, create a default admin user
-  if (users.length === 0) {
-    try {
-      const defaultPassword = 'admin';
-      const passwordHash = authService.hashPassword(defaultPassword);
-      userService.createUser('admin', passwordHash, true);
-      console.log('✅ Usuário admin padrão criado!');
-      console.log('   Username: admin');
-      console.log('   Password: admin');
-      console.log('   ⚠️  Altere a senha após o primeiro login!');
-    } catch (error) {
-      console.error('Failed to create default user:', error);
-    }
-  }
+  // Deprecated: User management is now handled by the backend API
+  // Users should be created through the registration form which calls the API
+  console.log('ℹ️  User management is handled by the backend API');
 }
 
 /**
