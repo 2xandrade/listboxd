@@ -162,5 +162,4 @@ if (typeof module !== 'undefined' && module.exports) {
 // Expose on browser window for app usage
 if (typeof window !== 'undefined') {
   window.GoogleSheetsApi = GoogleSheetsApi;
-  window.googleSheetsApi = googleSheetsApi;
 }
