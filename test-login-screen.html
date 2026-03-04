@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Screen</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #14181c;
+            color: #9ab;
+            padding: 20px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #status {
+            background: #2c3440;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        #login-section {
+            background: #2c3440;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .auth-container {
+            width: 100%;
+        }
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            background: #445566;
+            border: none;
+            color: #9ab;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .auth-tab.active {
+            background: #00c030;
+            color: white;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #14181c;
+            border: 1px solid #445566;
+            color: #9ab;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: #00c030;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .error {
+            color: #ff4444;
+            margin-top: 10px;
+        }
+        .success {
+            color: #00c030;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">
+        <h2>Debug Status</h2>
+        <div id="debug-output"></div>
+    </div>
+
+    <!-- Login Section -->
+    <section id="login-section" class="hidden">
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Login</button>
+                <button class="auth-tab" data-tab="register">Cadastro</button>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="login-form-container" class="auth-form-container">
+                <h2>Entrar</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" name="email" required placeholder="seu@email.com" />
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Senha</label>
+                        <input type="password" id="login-password" name="password" required placeholder="••••••••" />
+                    </div>
+                    <div id="login-error" class="error hidden"></div>
+                    <button type="submit">Entrar</button>
+                </form>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="register-form-container" class="auth-form-container hidden">
+                <h2>Criar Conta</h2>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="register-name">Nome</label>
+                        <input type="text" id="register-name" name="name" required placeholder="Seu nome" />
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" name="email" required placeholder="seu@email.com" />
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Senha</label>
+                        <input type="password" id="register-password" name="password" required placeholder="Mínimo 6 caracteres" />
+                    </div>
+                    <div id="register-error" class="error hidden"></div>
+                    <button type="submit">Criar Conta</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const debugOutput = document.getElementById('debug-output');
+        
+        function log(message, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            debugOutput.appendChild(p);
+            console.log(message);
+        }
+
+        // Test 1: Check if login section exists
+        log('Test 1: Checking if login section exists...');
+        const loginSection = document.getElementById('login-section');
+        if (loginSection) {
+            log('✓ Login section found', 'success');
+        } else {
+            log('✗ Login section NOT found', 'error');
+        }
+
+        // Test 2: Check if login section has hidden class
+        log('Test 2: Checking if login section has hidden class...');
+        if (loginSection && loginSection.classList.contains('hidden')) {
+            log('✓ Login section has hidden class (as expected)', 'success');
+        } else {
+            log('✗ Login section does NOT have hidden class', 'error');
+        }
+
+        // Test 3: Try to show login section
+        log('Test 3: Attempting to show login section...');
+        if (loginSection) {
+            loginSection.classList.remove('hidden');
+            log('✓ Removed hidden class from login section', 'success');
+            
+            // Check if it's visible now
+            const isVisible = !loginSection.classList.contains('hidden');
+            if (isVisible) {
+                log('✓ Login section is now visible!', 'success');
+            } else {
+                log('✗ Login section still not visible', 'error');
+            }
+        }
+
+        // Test 4: Check computed styles
+        log('Test 4: Checking computed styles...');
+        if (loginSection) {
+            const styles = window.getComputedStyle(loginSection);
+            log(`Display: ${styles.display}`);
+            log(`Visibility: ${styles.visibility}`);
+            log(`Opacity: ${styles.opacity}`);
+        }
+    </script>
+</body>
+</html>

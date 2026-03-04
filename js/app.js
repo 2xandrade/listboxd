@@ -75,27 +75,30 @@ function debounce(func, wait) {
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   // Validate configuration
+  let configValid = true;
+  
   if (!CONFIG || !CONFIG.googleSheets || !CONFIG.googleSheets.apiUrl) {
     console.error('❌ Configuração inválida: CONFIG.googleSheets.apiUrl não está definida');
-    notificationService.error('Erro de configuração: URL da API do Google Sheets não está definida. Verifique o arquivo config.js');
-    return;
-  }
-  
-  // Check if API URL is still the placeholder
-  if (CONFIG.googleSheets.apiUrl.includes('YOUR_SCRIPT_ID')) {
+    console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
+    configValid = false;
+  } else if (CONFIG.googleSheets.apiUrl.includes('YOUR_SCRIPT_ID')) {
     console.error('❌ Configuração inválida: URL da API do Google Sheets ainda está com o placeholder');
-    notificationService.error('Erro de configuração: Configure a URL da API do Google Sheets no arquivo config.js');
-    return;
+    console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
+    configValid = false;
   }
   
-  // Initialize Google Sheets API with URL from config
-  try {
-    googleSheetsApi = new GoogleSheetsApi(CONFIG.googleSheets.apiUrl);
-    console.log('✅ Google Sheets API inicializada com sucesso');
-  } catch (error) {
-    console.error('❌ Erro ao inicializar Google Sheets API:', error);
-    notificationService.error(`Erro ao inicializar API: ${error.message}`);
-    return;
+  // Initialize Google Sheets API only if config is valid
+  if (configValid) {
+    try {
+      googleSheetsApi = new GoogleSheetsApi(CONFIG.googleSheets.apiUrl);
+      console.log('✅ Google Sheets API inicializada com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao inicializar Google Sheets API:', error);
+      console.warn('⚠️  Continuando sem API - funcionalidades de backend não estarão disponíveis');
+      googleSheetsApi = null;
+    }
+  } else {
+    googleSheetsApi = null;
   }
   
   // Initialize services with dependencies
@@ -110,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tabManager = new TabManager(storageManager);
   streamingService = new StreamingService();
   
-  console.log('✅ Todos os serviços inicializados com sucesso');
+  console.log('✅ Todos os serviços inicializados');
   
   // Initialize keyboard shortcuts
   initializeKeyboardShortcuts();
