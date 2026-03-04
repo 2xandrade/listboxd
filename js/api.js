@@ -152,16 +152,10 @@ class GoogleSheetsApi {
   }
 }
 
-// Default instance for your published Apps Script URL.
-const googleSheetsApi = new GoogleSheetsApi(
-  'https://script.google.com/macros/s/AKfycbzBx4I34lxh-WMpT5ITya_0g-sP3KzFjlKtSMQhDfJ36whPAKw2ZjXN531pKpl7xi78/exec'
-);
-
 // Export for tests/node usage
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    GoogleSheetsApi,
-    googleSheetsApi
+    GoogleSheetsApi
   };
 }
 

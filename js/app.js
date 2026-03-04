@@ -74,55 +74,81 @@ function debounce(func, wait) {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  // Validate configuration
-  let configValid = true;
-  
-  if (!CONFIG || !CONFIG.googleSheets || !CONFIG.googleSheets.apiUrl) {
-    console.error('❌ Configuração inválida: CONFIG.googleSheets.apiUrl não está definida');
-    console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
-    configValid = false;
-  } else if (CONFIG.googleSheets.apiUrl.includes('YOUR_SCRIPT_ID')) {
-    console.error('❌ Configuração inválida: URL da API do Google Sheets ainda está com o placeholder');
-    console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
-    configValid = false;
-  }
-  
-  // Initialize Google Sheets API only if config is valid
-  if (configValid) {
-    try {
-      googleSheetsApi = new GoogleSheetsApi(CONFIG.googleSheets.apiUrl);
-      console.log('✅ Google Sheets API inicializada com sucesso');
-    } catch (error) {
-      console.error('❌ Erro ao inicializar Google Sheets API:', error);
-      console.warn('⚠️  Continuando sem API - funcionalidades de backend não estarão disponíveis');
+  try {
+    console.log('🚀 Iniciando aplicação...');
+    
+    // Validate configuration
+    let configValid = true;
+    
+    if (!CONFIG || !CONFIG.googleSheets || !CONFIG.googleSheets.apiUrl) {
+      console.error('❌ Configuração inválida: CONFIG.googleSheets.apiUrl não está definida');
+      console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
+      configValid = false;
+    } else if (CONFIG.googleSheets.apiUrl.includes('YOUR_SCRIPT_ID')) {
+      console.error('❌ Configuração inválida: URL da API do Google Sheets ainda está com o placeholder');
+      console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
+      configValid = false;
+    }
+    
+    // Initialize Google Sheets API only if config is valid
+    if (configValid) {
+      try {
+        googleSheetsApi = new GoogleSheetsApi(CONFIG.googleSheets.apiUrl);
+        console.log('✅ Google Sheets API inicializada com sucesso');
+      } catch (error) {
+        console.error('❌ Erro ao inicializar Google Sheets API:', error);
+        console.warn('⚠️  Continuando sem API - funcionalidades de backend não estarão disponíveis');
+        googleSheetsApi = null;
+      }
+    } else {
       googleSheetsApi = null;
     }
-  } else {
-    googleSheetsApi = null;
+    
+    // Initialize services with dependencies
+    console.log('📦 Inicializando serviços...');
+    storageManager = new StorageManager();
+    userService = new UserService(googleSheetsApi);
+    authService = new AuthService(storageManager, googleSheetsApi);
+    filmService = new FilmService();
+    listService = new ListService(googleSheetsApi, authService);
+    filterManager = new FilterManager(listService);
+    watchedFilterManager = new FilterManager(listService);
+    watchedFilterManager.storageKey = 'watched_filter_state'; // Use separate storage key
+    tabManager = new TabManager(storageManager);
+    streamingService = new StreamingService();
+    
+    console.log('✅ Todos os serviços inicializados');
+    
+    // Initialize keyboard shortcuts
+    console.log('⌨️  Inicializando atalhos de teclado...');
+    initializeKeyboardShortcuts();
+    
+    // Note: Default user creation is now handled by the backend API
+    // No need to create users on the frontend
+    
+    // Implement route protection - check authentication on page load
+    console.log('🔐 Verificando autenticação...');
+    checkAuthenticationAndRedirect();
+    
+    console.log('✅ Aplicação inicializada com sucesso!');
+  } catch (error) {
+    console.error('❌ ERRO FATAL durante inicialização:', error);
+    console.error('Stack trace:', error.stack);
+    
+    // Try to show login screen anyway
+    console.log('🔧 Tentando mostrar tela de login mesmo com erro...');
+    try {
+      const loginSection = document.getElementById('login-section');
+      if (loginSection) {
+        loginSection.classList.remove('hidden');
+        console.log('✅ Tela de login exibida');
+      } else {
+        console.error('❌ Elemento login-section não encontrado no DOM');
+      }
+    } catch (e) {
+      console.error('❌ Falha ao mostrar tela de login:', e);
+    }
   }
-  
-  // Initialize services with dependencies
-  storageManager = new StorageManager();
-  userService = new UserService(googleSheetsApi);
-  authService = new AuthService(storageManager, googleSheetsApi);
-  filmService = new FilmService();
-  listService = new ListService(googleSheetsApi, authService);
-  filterManager = new FilterManager(listService);
-  watchedFilterManager = new FilterManager(listService);
-  watchedFilterManager.storageKey = 'watched_filter_state'; // Use separate storage key
-  tabManager = new TabManager(storageManager);
-  streamingService = new StreamingService();
-  
-  console.log('✅ Todos os serviços inicializados');
-  
-  // Initialize keyboard shortcuts
-  initializeKeyboardShortcuts();
-  
-  // Note: Default user creation is now handled by the backend API
-  // No need to create users on the frontend
-  
-  // Implement route protection - check authentication on page load
-  checkAuthenticationAndRedirect();
 });
 
 /**
