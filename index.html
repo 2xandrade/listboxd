@@ -77,12 +77,12 @@
             </section>
 
             <!-- Film Listing Section -->
-            <section id="film-listing" class="hidden">
+            <section id="film-listing" class="hidden tab-content">
                 <h2>Explorar Filmes</h2>
                 
                 <!-- Search Bar -->
                 <div class="search-container">
-                    <input type="text" id="film-search" placeholder="Buscar filmes por título..." />
+                    <input type="text" id="film-search" placeholder="Buscar filmes por título... (Pressione / para focar)" title="Atalho: Pressione / para focar" />
                     <button id="search-btn">Buscar</button>
                 </div>
 
@@ -117,11 +117,17 @@
             </section>
 
             <!-- Shared List Section -->
-            <section id="shared-list" class="hidden">
+            <section id="shared-list" class="hidden tab-content">
                 <h2>Lista Compartilhada</h2>
                 
                 <!-- Filter Chips Container -->
                 <div id="filter-chips-container" class="filter-chips-container hidden"></div>
+                
+                <!-- Filter Toggle Button (Mobile) -->
+                <button id="filter-toggle-btn" class="filter-toggle-btn" aria-expanded="false" aria-controls="filter-controls">
+                    <span>Filtros e Ordenação</span>
+                    <span class="toggle-icon">▼</span>
+                </button>
                 
                 <!-- Filter Controls -->
                 <div id="filter-controls" class="filter-controls">
@@ -170,8 +176,14 @@
             </section>
 
             <!-- Watched Films Section -->
-            <section id="watched-films" class="hidden">
+            <section id="watched-films" class="hidden tab-content">
                 <h2>Filmes Assistidos</h2>
+                
+                <!-- Filter Toggle Button (Mobile) -->
+                <button id="watched-filter-toggle-btn" class="filter-toggle-btn" aria-expanded="false" aria-controls="watched-filter-controls">
+                    <span>Filtros e Ordenação</span>
+                    <span class="toggle-icon">▼</span>
+                </button>
                 
                 <!-- Filter Controls for Watched Films -->
                 <div id="watched-filter-controls" class="filter-controls">
@@ -217,7 +229,7 @@
         <div id="film-modal" class="modal hidden">
             <div class="modal-overlay"></div>
             <div class="modal-content">
-                <button class="modal-close" aria-label="Fechar">&times;</button>
+                <button class="modal-close" aria-label="Fechar (ESC)" title="Fechar (ESC)">&times;</button>
                 <div class="modal-body">
                     <div class="modal-poster-container">
                         <img id="modal-poster" class="modal-poster" alt="" />
@@ -243,7 +255,7 @@
         <div id="rating-modal" class="modal rating-modal hidden">
             <div class="modal-overlay"></div>
             <div class="modal-content rating-modal-content">
-                <button class="modal-close" aria-label="Fechar">&times;</button>
+                <button class="modal-close" aria-label="Fechar (ESC)" title="Fechar (ESC)">&times;</button>
                 <div class="rating-modal-body">
                     <h2 class="rating-modal-title">Avaliar Filme</h2>
                     <p class="rating-modal-subtitle">Como foi a experiência?</p>
@@ -292,6 +304,7 @@
     <script src="js/skeleton.js"></script>
     <script src="js/streaming.js"></script>
     <script src="js/infinite-scroll.js"></script>
+    <script src="js/keyboard.js"></script>
     <script src="js/tabs.js"></script>
     <script src="js/app.js"></script>
 </body>

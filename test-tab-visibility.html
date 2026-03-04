@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tab Visibility - Letterboxd Manager</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-info {
+            background: var(--color-bg-tertiary);
+            padding: var(--spacing-xl);
+            margin: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--color-accent-green);
+        }
+        .test-info h2 {
+            color: var(--color-accent-green);
+            margin-bottom: var(--spacing-base);
+        }
+        .test-info p {
+            color: var(--color-text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+        .test-section {
+            background: var(--color-bg-secondary);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-base) 0;
+            border-radius: var(--radius-md);
+        }
+        .test-section h3 {
+            color: var(--color-text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+        .status {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-base);
+            border-radius: var(--radius-sm);
+            font-weight: bold;
+            margin-left: var(--spacing-sm);
+        }
+        .status.pass {
+            background: var(--color-success);
+            color: white;
+        }
+        .status.fail {
+            background: var(--color-error);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Tab Visibility Test</h1>
+        </header>
+        <main id="main-content">
+            <div class="test-info">
+                <h2>Testing Requirements 13.1-13.5</h2>
+                <p><strong>13.1:</strong> All sections should have 'hidden' class by default in HTML</p>
+                <p><strong>13.2:</strong> Only the active tab should be visible on load</p>
+                <p><strong>13.3:</strong> When switching tabs, previous tab content should be hidden</p>
+                <p><strong>13.4:</strong> Smooth transitions should occur between tabs</p>
+                <p><strong>13.5:</strong> Test in different scenarios (first visit, refresh, etc.)</p>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div id="main-tabs" class="main-tabs"></div>
+
+            <!-- Film Listing Section -->
+            <section id="film-listing" class="hidden tab-content">
+                <h2>Explorar Filmes</h2>
+                <div class="test-section">
+                    <h3>Film Listing Content</h3>
+                    <p>This is the film listing section. It should only be visible when the "Explorar Filmes" tab is active.</p>
+                </div>
+            </section>
+
+            <!-- Shared List Section -->
+            <section id="shared-list" class="hidden tab-content">
+                <h2>Lista Compartilhada</h2>
+                <div class="test-section">
+                    <h3>Shared List Content</h3>
+                    <p>This is the shared list section. It should only be visible when the "Lista Compartilhada" tab is active.</p>
+                </div>
+            </section>
+
+            <!-- Watched Films Section -->
+            <section id="watched-films" class="hidden tab-content">
+                <h2>Filmes Assistidos</h2>
+                <div class="test-section">
+                    <h3>Watched Films Content</h3>
+                    <p>This is the watched films section. It should only be visible when the "Filmes Assistidos" tab is active.</p>
+                </div>
+            </section>
+
+            <!-- Test Results -->
+            <div class="test-info" style="margin-top: 2rem;">
+                <h2>Test Results</h2>
+                <div id="test-results"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/tabs.js"></script>
+    <script>
+        // Run tests on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const resultsContainer = document.getElementById('test-results');
+            const results = [];
+
+            // Test 1: Check if all sections have hidden class initially
+            const sections = ['film-listing', 'shared-list', 'watched-films'];
+            const allHidden = sections.every(id => {
+                const section = document.getElementById(id);
+                return section && section.classList.contains('hidden');
+            });
+            results.push({
+                name: 'Test 1: All sections hidden initially (Req 13.1)',
+                pass: allHidden
+            });
+
+            // Initialize TabManager
+            const storageManager = new StorageManager();
+            const tabManager = new TabManager(storageManager);
+            tabManager.initialize();
+
+            // Test 2: Check if only one section is visible after initialization
+            const visibleSections = sections.filter(id => {
+                const section = document.getElementById(id);
+                return section && !section.classList.contains('hidden');
+            });
+            results.push({
+                name: 'Test 2: Only one section visible after init (Req 13.2)',
+                pass: visibleSections.length === 1
+            });
+
+            // Test 3: Check if the visible section matches the active tab
+            const activeTab = tabManager.getActiveTab();
+            const expectedSection = tabManager.tabs[activeTab].contentId;
+            const correctSectionVisible = visibleSections[0] === expectedSection;
+            results.push({
+                name: 'Test 3: Correct section visible for active tab (Req 13.2)',
+                pass: correctSectionVisible
+            });
+
+            // Test 4: Switch tabs and verify only new tab is visible
+            const originalTab = tabManager.getActiveTab();
+            const newTab = originalTab === 'explore' ? 'shared' : 'explore';
+            tabManager.switchTab(newTab);
+            
+            setTimeout(() => {
+                const visibleAfterSwitch = sections.filter(id => {
+                    const section = document.getElementById(id);
+                    return section && !section.classList.contains('hidden');
+                });
+                
+                const newExpectedSection = tabManager.tabs[newTab].contentId;
+                const switchWorked = visibleAfterSwitch.length === 1 && 
+                                   visibleAfterSwitch[0] === newExpectedSection;
+                
+                results.push({
+                    name: 'Test 4: Tab switching hides previous content (Req 13.3)',
+                    pass: switchWorked
+                });
+
+                // Test 5: Check if tab-content class is present for transitions
+                const hasTransitionClass = sections.every(id => {
+                    const section = document.getElementById(id);
+                    return section && section.classList.contains('tab-content');
+                });
+                results.push({
+                    name: 'Test 5: Tab content has transition class (Req 13.4)',
+                    pass: hasTransitionClass
+                });
+
+                // Display results
+                results.forEach(result => {
+                    const div = document.createElement('div');
+                    div.className = 'test-section';
+                    div.innerHTML = `
+                        <h3>
+                            ${result.name}
+                            <span class="status ${result.pass ? 'pass' : 'fail'}">
+                                ${result.pass ? 'PASS' : 'FAIL'}
+                            </span>
+                        </h3>
+                    `;
+                    resultsContainer.appendChild(div);
+                });
+
+                // Overall result
+                const allPassed = results.every(r => r.pass);
+                const summary = document.createElement('div');
+                summary.className = 'test-section';
+                summary.style.marginTop = '1rem';
+                summary.style.borderColor = allPassed ? 'var(--color-success)' : 'var(--color-error)';
+                summary.innerHTML = `
+                    <h3>
+                        Overall Result: ${results.filter(r => r.pass).length}/${results.length} tests passed
+                        <span class="status ${allPassed ? 'pass' : 'fail'}">
+                            ${allPassed ? 'ALL PASS' : 'SOME FAILURES'}
+                        </span>
+                    </h3>
+                `;
+                resultsContainer.appendChild(summary);
+            }, 100); // Small delay to allow transition to complete
+        });
+    </script>
+</body>
+</html>

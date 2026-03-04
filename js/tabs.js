@@ -1,7 +1,7 @@
 /**
  * Tab Navigation Module
  * Manages navigation between different tabs in the main interface
- * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
+ * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 12.4
  */
 
 class TabManager {
@@ -25,11 +25,17 @@ class TabManager {
         contentId: 'watched-films'
       }
     };
+    
+    // Touch gesture support
+    this.touchStartX = 0;
+    this.touchEndX = 0;
+    this.minSwipeDistance = 50; // Minimum distance for a swipe
   }
 
   /**
    * Initialize tab navigation
    * Creates tab buttons and sets up event listeners
+   * Requirements: 13.1, 13.2, 13.3, 13.4, 13.5
    */
   initialize() {
     const tabContainer = document.getElementById('main-tabs');
@@ -40,6 +46,9 @@ class TabManager {
 
     // Clear existing tabs
     tabContainer.innerHTML = '';
+
+    // Ensure all tab content sections are hidden initially (Requirement 13.1)
+    this.hideAllTabContent();
 
     // Create tab buttons
     Object.values(this.tabs).forEach(tab => {
@@ -61,8 +70,76 @@ class TabManager {
       tabContainer.appendChild(button);
     });
 
-    // Show the active tab content
+    // Show only the active tab content (Requirements 13.2, 13.3)
     this.showTabContent(this.activeTab);
+    
+    // Setup touch gestures for mobile
+    this.setupTouchGestures();
+    
+    // Ensure active tab is visible in scrollable container
+    this.scrollToActiveTab();
+  }
+
+  /**
+   * Setup touch gesture support for swiping between tabs
+   * Requirements: 12.4
+   */
+  setupTouchGestures() {
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) return;
+
+    // Touch start
+    mainContent.addEventListener('touchstart', (e) => {
+      this.touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    // Touch end
+    mainContent.addEventListener('touchend', (e) => {
+      this.touchEndX = e.changedTouches[0].screenX;
+      this.handleSwipeGesture();
+    }, { passive: true });
+  }
+
+  /**
+   * Handle swipe gesture to switch tabs
+   */
+  handleSwipeGesture() {
+    const swipeDistance = this.touchEndX - this.touchStartX;
+    
+    // Ignore small movements
+    if (Math.abs(swipeDistance) < this.minSwipeDistance) {
+      return;
+    }
+
+    const tabIds = Object.keys(this.tabs);
+    const currentIndex = tabIds.indexOf(this.activeTab);
+
+    // Swipe right - go to previous tab
+    if (swipeDistance > 0 && currentIndex > 0) {
+      this.switchTab(tabIds[currentIndex - 1]);
+    }
+    // Swipe left - go to next tab
+    else if (swipeDistance < 0 && currentIndex < tabIds.length - 1) {
+      this.switchTab(tabIds[currentIndex + 1]);
+    }
+  }
+
+  /**
+   * Scroll the tab container to make the active tab visible
+   */
+  scrollToActiveTab() {
+    const tabContainer = document.getElementById('main-tabs');
+    if (!tabContainer) return;
+
+    const activeButton = tabContainer.querySelector('.main-tab-btn.active');
+    if (!activeButton) return;
+
+    // Scroll the active tab into view
+    activeButton.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center'
+    });
   }
 
   /**
@@ -86,6 +163,9 @@ class TabManager {
 
     // Show tab content
     this.showTabContent(tabId);
+    
+    // Scroll to make active tab visible
+    this.scrollToActiveTab();
   }
 
   /**
@@ -103,8 +183,22 @@ class TabManager {
   }
 
   /**
+   * Hide all tab content sections
+   * Requirements: 13.1, 13.3
+   */
+  hideAllTabContent() {
+    Object.values(this.tabs).forEach(tab => {
+      const section = document.getElementById(tab.contentId);
+      if (section) {
+        section.classList.add('hidden');
+      }
+    });
+  }
+
+  /**
    * Show content for the specified tab
    * @param {string} tabId - ID of the tab to show
+   * Requirements: 13.2, 13.3, 13.4
    */
   showTabContent(tabId) {
     const tab = this.tabs[tabId];
@@ -113,18 +207,16 @@ class TabManager {
       return;
     }
 
-    // Hide all tab content sections
-    Object.values(this.tabs).forEach(t => {
-      const section = document.getElementById(t.contentId);
-      if (section) {
-        section.classList.add('hidden');
-      }
-    });
+    // Hide all tab content sections first (Requirement 13.3)
+    this.hideAllTabContent();
 
-    // Show the selected tab content
+    // Show the selected tab content with transition (Requirement 13.4)
     const activeSection = document.getElementById(tab.contentId);
     if (activeSection) {
-      activeSection.classList.remove('hidden');
+      // Use requestAnimationFrame to ensure smooth transition
+      requestAnimationFrame(() => {
+        activeSection.classList.remove('hidden');
+      });
     }
   }
 

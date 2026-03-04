@@ -112,12 +112,66 @@ document.addEventListener('DOMContentLoaded', () => {
   
   console.log('✅ Todos os serviços inicializados com sucesso');
   
+  // Initialize keyboard shortcuts
+  initializeKeyboardShortcuts();
+  
   // Create default user if no users exist
   initializeDefaultUser();
   
   // Implement route protection - check authentication on page load
   checkAuthenticationAndRedirect();
 });
+
+/**
+ * Initialize keyboard shortcuts
+ * Requirements: 12.3
+ */
+function initializeKeyboardShortcuts() {
+  const keyboardShortcuts = new KeyboardShortcuts();
+  
+  // ESC to close modals
+  keyboardShortcuts.register('escape', () => {
+    // Check if film modal is open
+    const filmModal = document.getElementById('film-modal');
+    if (filmModal && !filmModal.classList.contains('hidden')) {
+      closeFilmModal();
+      return;
+    }
+    
+    // Check if rating modal is open
+    const ratingModal = document.getElementById('rating-modal');
+    if (ratingModal && !ratingModal.classList.contains('hidden')) {
+      // Trigger cancel button click to properly close rating modal
+      const cancelBtn = document.getElementById('rating-cancel-btn');
+      if (cancelBtn) {
+        cancelBtn.click();
+      }
+      return;
+    }
+  }, {
+    description: 'Fechar modais',
+    preventDefault: true
+  });
+  
+  // / to focus search field
+  keyboardShortcuts.register('/', () => {
+    const searchInput = document.getElementById('film-search');
+    if (searchInput && !searchInput.classList.contains('hidden')) {
+      searchInput.focus();
+      searchInput.select(); // Select all text for easy replacement
+    }
+  }, {
+    description: 'Focar no campo de busca',
+    preventDefault: true
+  });
+  
+  console.log('✅ Atalhos de teclado inicializados');
+  console.log('   ESC - Fechar modais');
+  console.log('   /   - Focar no campo de busca');
+  
+  // Store globally for potential future use
+  window.keyboardShortcuts = keyboardShortcuts;
+}
 
 /**
  * Initialize default user if no users exist
@@ -366,19 +420,20 @@ function setButtonLoading(button, isLoading) {
 
 /**
  * Show authenticated UI (film listing and shared list)
+ * Requirements: 13.1, 13.2, 13.5
  */
 function showAuthenticatedUI() {
-  // Hide all sections
+  // Hide all sections first (Requirement 13.1)
   hideAllSections();
   
   // Show tab navigation
   const tabsContainer = document.getElementById('main-tabs');
   tabsContainer.classList.remove('hidden');
   
-  // Initialize tab manager
+  // Initialize tab manager - this will handle showing only the active tab (Requirements 13.2, 13.5)
   tabManager.initialize();
   
-  // Initialize interfaces
+  // Initialize interfaces (but don't show them - TabManager handles visibility)
   initializeFilmListing();
   initializeSharedList();
   initializeWatchedFilms();
@@ -439,6 +494,7 @@ function hideAllSections() {
 
 /**
  * Initialize film listing interface
+ * Requirements: 13.1 - Don't show section, let TabManager handle visibility
  */
 function initializeFilmListing() {
   const filmListingSection = document.getElementById('film-listing');
@@ -447,8 +503,8 @@ function initializeFilmListing() {
   const tabButtons = document.querySelectorAll('.tab-btn');
   const filmsGrid = document.getElementById('films-grid');
 
-  // Show film listing section
-  filmListingSection.classList.remove('hidden');
+  // Don't show section here - TabManager will handle visibility (Requirement 13.1)
+  // filmListingSection.classList.remove('hidden');
 
   // Load initial films (popular)
   loadFilms('popular', 1);
@@ -1003,12 +1059,13 @@ function handleAddToList(film) {
 
 /**
  * Initialize shared list interface
+ * Requirements: 13.1 - Don't show section, let TabManager handle visibility
  */
 function initializeSharedList() {
   const sharedListSection = document.getElementById('shared-list');
   
-  // Show shared list section
-  sharedListSection.classList.remove('hidden');
+  // Don't show section here - TabManager will handle visibility (Requirement 13.1)
+  // sharedListSection.classList.remove('hidden');
   
   // Initialize filter controls
   initializeFilterControls();
@@ -1188,6 +1245,58 @@ function initializeFilterControls() {
   // Initial state
   updateClearButtonState();
   updateFilterCount();
+  
+  // Initialize filter toggle for mobile (Requirement 12.4)
+  initializeFilterToggle('filter-toggle-btn', 'filter-controls');
+}
+
+/**
+ * Initialize filter toggle button for mobile accordion/drawer
+ * Requirements: 12.4
+ * @param {string} toggleBtnId - ID of the toggle button
+ * @param {string} controlsId - ID of the filter controls container
+ */
+function initializeFilterToggle(toggleBtnId, controlsId) {
+  const toggleBtn = document.getElementById(toggleBtnId);
+  const controls = document.getElementById(controlsId);
+  
+  if (!toggleBtn || !controls) {
+    return;
+  }
+  
+  // Toggle filter controls visibility
+  toggleBtn.addEventListener('click', () => {
+    const isExpanded = controls.classList.contains('expanded');
+    
+    if (isExpanded) {
+      controls.classList.remove('expanded');
+      toggleBtn.classList.remove('active');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    } else {
+      controls.classList.add('expanded');
+      toggleBtn.classList.add('active');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+  });
+  
+  // Auto-expand on desktop, collapse on mobile
+  const handleResize = () => {
+    if (window.innerWidth > 768) {
+      controls.classList.add('expanded');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    } else {
+      // On mobile, keep current state or default to collapsed
+      if (!controls.classList.contains('expanded')) {
+        toggleBtn.setAttribute('aria-expanded', 'false');
+      }
+    }
+  };
+  
+  // Initial check
+  handleResize();
+  
+  // Listen for window resize
+  window.addEventListener('resize', debounce(handleResize, 250));
 }
 
 /**
@@ -1726,12 +1835,13 @@ async function handleMarkAsWatched(filmId) {
 
 /**
  * Initialize watched films interface
+ * Requirements: 13.1 - Don't show section, let TabManager handle visibility
  */
 function initializeWatchedFilms() {
   const watchedFilmsSection = document.getElementById('watched-films');
   
-  // Show watched films section (will be hidden by tab manager initially)
-  watchedFilmsSection.classList.remove('hidden');
+  // Don't show section here - TabManager will handle visibility (Requirement 13.1)
+  // watchedFilmsSection.classList.remove('hidden');
   
   // Initialize watched filter controls
   initializeWatchedFilterControls();
@@ -1823,6 +1933,9 @@ function initializeWatchedFilterControls() {
   // Initial state
   updateWatchedClearButtonState();
   updateWatchedFilterCount();
+  
+  // Initialize filter toggle for mobile (Requirement 12.4)
+  initializeFilterToggle('watched-filter-toggle-btn', 'watched-filter-controls');
 }
 
 /**

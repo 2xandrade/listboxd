@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Film Cards Mobile Responsiveness</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Test viewport indicators */
+        body::before {
+            content: 'Desktop (>768px)';
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 192, 48, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 10000;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            body::before {
+                content: 'Tablet (≤768px)';
+                background: rgba(255, 128, 0, 0.9);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body::before {
+                content: 'Mobile (≤480px)';
+                background: rgba(255, 0, 0, 0.9);
+            }
+        }
+        
+        .test-info {
+            background: var(--color-bg-secondary);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+            border-radius: var(--radius-xl);
+            border: 2px solid var(--color-accent-green);
+        }
+        
+        .test-info h2 {
+            color: var(--color-accent-green);
+            margin-bottom: var(--spacing-base);
+        }
+        
+        .test-info ul {
+            color: var(--color-text-secondary);
+            margin-left: var(--spacing-xl);
+        }
+        
+        .test-info li {
+            margin-bottom: var(--spacing-xs);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎬 Film Cards Mobile Test</h1>
+    </header>
+
+    <main>
+        <div class="test-info">
+            <h2>Testing Requirements (Task 24):</h2>
+            <ul>
+                <li>✓ Grid adjusts to 2 columns on small screens (≤480px)</li>
+                <li>✓ Reduced padding and margins on mobile</li>
+                <li>✓ Font sizes optimized for legibility</li>
+                <li>✓ Buttons are min 44x44px (iOS touch target)</li>
+            </ul>
+            <p style="margin-top: 1rem; color: var(--color-text-primary);">
+                <strong>How to test:</strong> Resize your browser window or use DevTools device emulation to test different screen sizes.
+            </p>
+        </div>
+
+        <section>
+            <h2>Film Cards Grid</h2>
+            
+            <div class="films-grid">
+                <!-- Film Card 1 -->
+                <div class="film-card">
+                    <img src="https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" 
+                         alt="Oppenheimer" 
+                         class="film-poster"
+                         loading="lazy">
+                    <div class="film-info">
+                        <h3 class="film-title">Oppenheimer</h3>
+                        <div class="film-meta">
+                            <span class="film-rating">⭐ 8.3</span>
+                            <span class="film-year">2023</span>
+                        </div>
+                        <p class="film-genres">Drama, History, Thriller</p>
+                        <div class="streaming-badges">
+                            <span class="streaming-badge" style="background-color: #E50914;">
+                                <span class="streaming-icon">🎬</span>
+                                <span class="streaming-name">Netflix</span>
+                            </span>
+                            <span class="streaming-badge" style="background-color: #00A8E1;">
+                                <span class="streaming-icon">📺</span>
+                                <span class="streaming-name">Prime</span>
+                            </span>
+                        </div>
+                        <button class="add-to-list-btn">Adicionar à Lista</button>
+                    </div>
+                </div>
+
+                <!-- Film Card 2 -->
+                <div class="film-card">
+                    <img src="https://image.tmdb.org/t/p/w500/qNBAXBIQlnOThrVvA6mA2B5ggV6.jpg" 
+                         alt="The Killer" 
+                         class="film-poster"
+                         loading="lazy">
+                    <div class="film-info">
+                        <h3 class="film-title">The Killer</h3>
+                        <div class="film-meta">
+                            <span class="film-rating">⭐ 7.1</span>
+                            <span class="film-year">2023</span>
+                        </div>
+                        <p class="film-genres">Action, Crime, Thriller</p>
+                        <div class="streaming-badges">
+                            <span class="streaming-badge" style="background-color: #E50914;">
+                                <span class="streaming-icon">🎬</span>
+                                <span class="streaming-name">Netflix</span>
+                            </span>
+                        </div>
+                        <button class="add-to-list-btn">Adicionar à Lista</button>
+                    </div>
+                </div>
+
+                <!-- Film Card 3 -->
+                <div class="film-card">
+                    <img src="https://image.tmdb.org/t/p/w500/rktDFPbfHfUbArZ6OOOKsXcv0Bm.jpg" 
+                         alt="Dune: Part Two" 
+                         class="film-poster"
+                         loading="lazy">
+                    <div class="film-info">
+                        <h3 class="film-title">Dune: Part Two</h3>
+                        <div class="film-meta">
+                            <span class="film-rating">⭐ 8.5</span>
+                            <span class="film-year">2024</span>
+                        </div>
+                        <p class="film-genres">Science Fiction, Adventure</p>
+                        <div class="streaming-badges">
+                            <span class="streaming-unavailable">Info não disponível</span>
+                        </div>
+                        <button class="add-to-list-btn">Adicionar à Lista</button>
+                    </div>
+                </div>
+
+                <!-- Film Card 4 -->
+                <div class="film-card">
+                    <div class="film-poster no-poster">🎬</div>
+                    <div class="film-info">
+                        <h3 class="film-title">Film Without Poster Example</h3>
+                        <div class="film-meta">
+                            <span class="film-rating">⭐ 7.5</span>
+                            <span class="film-year">2024</span>
+                        </div>
+                        <p class="film-genres">Drama, Mystery</p>
+                        <div class="streaming-badges">
+                            <span class="streaming-badge" style="background-color: #113CCF;">
+                                <span class="streaming-icon">🏰</span>
+                                <span class="streaming-name">Disney+</span>
+                            </span>
+                        </div>
+                        <button class="add-to-list-btn">Adicionar à Lista</button>
+                    </div>
+                </div>
+
+                <!-- Film Card 5 - In List -->
+                <div class="film-card in-list">
+                    <img src="https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg" 
+                         alt="Poor Things" 
+                         class="film-poster"
+                         loading="lazy">
+                    <div class="film-info">
+                        <h3 class="film-title">Poor Things</h3>
+                        <div class="film-meta">
+                            <span class="film-rating">⭐ 7.8</span>
+                            <span class="film-year">2023</span>
+                        </div>
+                        <p class="film-genres">Comedy, Drama, Romance</p>
+                        <div class="streaming-badges">
+                            <span class="streaming-badge" style="background-color: #B026FF;">
+                                <span class="streaming-icon">🎭</span>
+                                <span class="streaming-name">HBO Max</span>
+                            </span>
+                        </div>
+                        <button class="add-to-list-btn in-list">Na Lista</button>
+                    </div>
+                </div>
+
+                <!-- Film Card 6 -->
+                <div class="film-card">
+                    <img src="https://image.tmdb.org/t/p/w500/qhb1qOilapbapxWQn9jtRCMwXJF.jpg" 
+                         alt="Killers of the Flower Moon" 
+                         class="film-poster"
+                         loading="lazy">
+                    <div class="film-info">
+                        <h3 class="film-title">Killers of the Flower Moon</h3>
+                        <div class="film-meta">
+                            <span class="film-rating">⭐ 7.9</span>
+                            <span class="film-year">2023</span>
+                        </div>
+                        <p class="film-genres">Crime, Drama, History</p>
+                        <div class="streaming-badges">
+                            <span class="streaming-badge" style="background-color: #000000;">
+                                <span class="streaming-icon">🍎</span>
+                                <span class="streaming-name">Apple TV+</span>
+                            </span>
+                        </div>
+                        <button class="add-to-list-btn">Adicionar à Lista</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section style="margin-top: 3rem;">
+            <h2>Touch Target Test</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 1rem;">
+                All buttons should be at least 44x44px for easy tapping on mobile devices.
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                <button>Regular Button</button>
+                <button class="add-to-list-btn" style="width: auto;">Add to List Button</button>
+                <button class="filter-btn">Filter Button</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Add loaded class to images when they load
+        document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+            if (img.complete) {
+                img.classList.add('loaded');
+            } else {
+                img.addEventListener('load', () => {
+                    img.classList.add('loaded');
+                });
+            }
+        });
+
+        // Log viewport size changes
+        window.addEventListener('resize', () => {
+            console.log(`Viewport: ${window.innerWidth}x${window.innerHeight}`);
+        });
+        
+        console.log('Initial viewport:', `${window.innerWidth}x${window.innerHeight}`);
+    </script>
+</body>
+</html>

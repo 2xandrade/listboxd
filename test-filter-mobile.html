@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Test - Mobile Filter Responsiveness</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--color-bg-secondary);
+            border-radius: var(--radius-xl);
+        }
+        .test-section h2 {
+            color: var(--color-accent-green);
+            margin-bottom: 20px;
+        }
+        .viewport-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: var(--color-bg-tertiary);
+            padding: 10px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="viewport-info">
+        Viewport: <span id="viewport-width"></span>px
+    </div>
+
+    <h1>Mobile Filter Responsiveness Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Filter Toggle Button (Mobile Only)</h2>
+        <p>On mobile (≤768px), a toggle button should appear. On desktop, it should be hidden.</p>
+        
+        <button id="test-filter-toggle-btn" class="filter-toggle-btn" aria-expanded="false">
+            <span>Filtros e Ordenação</span>
+            <span class="toggle-icon">▼</span>
+        </button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Filter Controls Accordion</h2>
+        <p>On mobile, filters should be collapsed by default. Click toggle to expand/collapse.</p>
+        
+        <button id="filter-toggle-btn" class="filter-toggle-btn" aria-expanded="false">
+            <span>Filtros e Ordenação</span>
+            <span class="toggle-icon">▼</span>
+        </button>
+        
+        <div id="filter-controls" class="filter-controls">
+            <div class="filter-group">
+                <label for="genre-filter">Filtrar por gênero:</label>
+                <select id="genre-filter" class="filter-select">
+                    <option value="">Todos os gêneros</option>
+                    <option value="Ação">Ação</option>
+                    <option value="Comédia">Comédia</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Ficção Científica">Ficção Científica</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="name-filter">Buscar por nome:</label>
+                <input type="text" id="name-filter" class="filter-input" placeholder="Digite o nome do filme..." />
+            </div>
+            
+            <div class="filter-group">
+                <label for="streaming-filter">Filtrar por streaming:</label>
+                <select id="streaming-filter" class="filter-select">
+                    <option value="">Todos os serviços</option>
+                    <option value="netflix">Netflix</option>
+                    <option value="prime">Prime Video</option>
+                    <option value="disney">Disney+</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="sort-filter">Ordenar por:</label>
+                <select id="sort-filter" class="filter-select">
+                    <option value="dateAdded">Data de Adição</option>
+                    <option value="rating">Avaliação</option>
+                    <option value="year">Ano de Lançamento</option>
+                    <option value="random">Aleatório</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <button id="random-filter-btn" class="filter-btn">🎲 Ordem Aleatória</button>
+            </div>
+            
+            <div class="filter-group">
+                <button id="clear-filters-btn" class="filter-btn clear-btn">✕ Limpar Filtros</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Filter Chips on Small Screens</h2>
+        <p>Chips should wrap properly and be easily tappable on mobile (44x44px touch target).</p>
+        
+        <div id="filter-chips-container" class="filter-chips-container">
+            <div class="filter-chip filter-chip-visible">
+                <span class="filter-chip-label">Gênero: Ação</span>
+                <button class="filter-chip-remove" aria-label="Remover filtro">×</button>
+            </div>
+            <div class="filter-chip filter-chip-visible">
+                <span class="filter-chip-label">Busca: "Matrix"</span>
+                <button class="filter-chip-remove" aria-label="Remover filtro">×</button>
+            </div>
+            <div class="filter-chip filter-chip-visible">
+                <span class="filter-chip-label">Streaming: Netflix</span>
+                <button class="filter-chip-remove" aria-label="Remover filtro">×</button>
+            </div>
+            <div class="filter-chip filter-chip-visible">
+                <span class="filter-chip-label">Ordem Aleatória</span>
+                <button class="filter-chip-remove" aria-label="Remover filtro">×</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Touch-Friendly Dropdowns</h2>
+        <p>Dropdowns should have minimum 44px height and be easy to tap on mobile.</p>
+        
+        <div class="filter-group">
+            <label for="test-select">Test Select:</label>
+            <select id="test-select" class="filter-select">
+                <option value="">Select an option</option>
+                <option value="1">Option 1</option>
+                <option value="2">Option 2</option>
+                <option value="3">Option 3</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="test-input">Test Input:</label>
+            <input type="text" id="test-input" class="filter-input" placeholder="Type something..." />
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 5: Long Filter Labels</h2>
+        <p>Long chip labels should truncate properly on small screens.</p>
+        
+        <div id="long-chips-container" class="filter-chips-container">
+            <div class="filter-chip filter-chip-visible">
+                <span class="filter-chip-label">Gênero: Ficção Científica e Fantasia</span>
+                <button class="filter-chip-remove" aria-label="Remover filtro">×</button>
+            </div>
+            <div class="filter-chip filter-chip-visible">
+                <span class="filter-chip-label">Busca: "The Lord of the Rings: The Fellowship of the Ring"</span>
+                <button class="filter-chip-remove" aria-label="Remover filtro">×</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update viewport width display
+        function updateViewportWidth() {
+            document.getElementById('viewport-width').textContent = window.innerWidth;
+        }
+        updateViewportWidth();
+        window.addEventListener('resize', updateViewportWidth);
+
+        // Test toggle functionality
+        const toggleBtn = document.getElementById('filter-toggle-btn');
+        const controls = document.getElementById('filter-controls');
+        
+        if (toggleBtn && controls) {
+            toggleBtn.addEventListener('click', () => {
+                const isExpanded = controls.classList.contains('expanded');
+                
+                if (isExpanded) {
+                    controls.classList.remove('expanded');
+                    toggleBtn.classList.remove('active');
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                } else {
+                    controls.classList.add('expanded');
+                    toggleBtn.classList.add('active');
+                    toggleBtn.setAttribute('aria-expanded', 'true');
+                }
+            });
+            
+            // Auto-expand on desktop
+            function handleResize() {
+                if (window.innerWidth > 768) {
+                    controls.classList.add('expanded');
+                    toggleBtn.setAttribute('aria-expanded', 'true');
+                }
+            }
+            handleResize();
+            window.addEventListener('resize', handleResize);
+        }
+
+        // Test chip removal
+        document.querySelectorAll('.filter-chip-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const chip = e.target.closest('.filter-chip');
+                chip.classList.add('filter-chip-removing');
+                setTimeout(() => chip.remove(), 200);
+            });
+        });
+    </script>
+</body>
+</html>

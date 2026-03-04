@@ -59,6 +59,22 @@ A aplicação é leve, sem frameworks pesados, e pode ser hospedada gratuitament
 - **Testes**: Jest + fast-check (property-based testing)
 - **Hospedagem**: GitHub Pages
 
+### 🌐 Compatibilidade de Navegadores
+
+A aplicação é totalmente compatível com os principais navegadores modernos:
+
+- ✅ **Chrome** 90+ (Recomendado)
+- ✅ **Firefox** 88+
+- ✅ **Safari** 14+
+- ✅ **Edge** 90+ (Chromium)
+- ✅ **iOS Safari** 14+
+- ✅ **Chrome Android** 90+
+
+Para mais detalhes sobre compatibilidade e testes, consulte:
+- 📖 [Guia de Testes Cross-Browser](browser-testing-guide.md)
+- 📋 [Suporte de Navegadores](BROWSER-SUPPORT.md)
+- 🧪 [Relatório de Testes](/.kiro/specs/google-sheets-integration/task-33-browser-testing-report.md)
+
 ## 🏗 Arquitetura
 
 A aplicação segue uma arquitetura em camadas:
@@ -602,6 +618,21 @@ Na aba "Filmes Assistidos":
 2. Veja todos os filmes adicionados por todos os usuários
 3. Veja quem adicionou e quando
 4. Use os filtros para encontrar filmes específicos
+
+### Atalhos de Teclado
+
+A aplicação oferece atalhos de teclado para facilitar a navegação:
+
+| Tecla | Ação | Descrição |
+|-------|------|-----------|
+| **ESC** | Fechar modais | Fecha qualquer modal aberto (detalhes do filme ou avaliação) |
+| **/** | Focar busca | Move o foco para o campo de busca de filmes |
+
+**Dicas:**
+- Os atalhos funcionam em qualquer momento durante o uso da aplicação
+- O atalho **ESC** funciona mesmo quando você está digitando em campos de texto
+- O atalho **/** seleciona automaticamente o texto no campo de busca para facilitar a substituição
+- Indicadores visuais dos atalhos estão presentes na interface (ex: placeholder do campo de busca)
 
 ### Administração (apenas Admin)
 
