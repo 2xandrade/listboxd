@@ -84,7 +84,7 @@ describe('UserService - Google Sheets API Integration', () => {
       expect(result).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Error fetching user:',
-        expect.any(Error)
+        'Network error'
       );
       
       consoleErrorSpy.mockRestore();
