@@ -232,9 +232,13 @@ class ListService {
    * @param {Object} film - Film object
    * @param {string} userId - User ID
    * @param {string} username - Username
-   * @returns {Object} List entry
+   * @returns {Promise<Object>} List entry
    */
-  addFilmToList(film, userId, username) {
+  async addFilmToList(film, userId, username) {
+    if (!this.currentListId) {
+      throw new Error('No list selected');
+    }
+    
     // Create entry with proper structure
     const entry = {
       id: `temp-${Date.now()}`,
@@ -255,7 +259,37 @@ class ListService {
       addedAt: new Date().toISOString()
     };
     
+    // Add to local cache immediately for instant UI update
     this.sharedListCache.push(entry);
+    
+    // Try to persist to Google Sheets in background
+    // Using addWatchedMovie with nota=0 as a workaround
+    // TODO: Create proper addToSharedList endpoint
+    try {
+      const response = await this.googleSheetsApi.addWatchedMovie({
+        id_lista: this.currentListId,
+        id_usuario: userId,
+        titulo_filme: film.title,
+        ano: film.year || '',
+        nota: 0, // 0 means "not watched yet"
+        assistido_em: null,
+        review: '',
+        tmdb_id: film.id,
+        poster: film.poster || '',
+        rating: film.rating || 0,
+        genres: JSON.stringify(film.genres || [])
+      });
+      
+      // Update entry with real ID from server
+      if (response && response.data) {
+        entry.id = response.data.id_filme;
+        entry.id_filme = response.data.id_filme;
+      }
+    } catch (error) {
+      console.warn('Failed to persist to Google Sheets:', error.message);
+      // Keep in cache anyway for now
+    }
+    
     return entry;
   }
 
@@ -267,6 +301,53 @@ class ListService {
     const index = this.sharedListCache.findIndex(movie => movie.id_filme === entryId);
     if (index !== -1) {
       this.sharedListCache.splice(index, 1);
+    }
+  }
+
+  /**
+   * Mark a film as watched
+   * @param {number} filmId - TMDB film ID
+   * @param {number} rating - User rating (0.5-5)
+   * @param {string} userId - User ID
+   * @param {string} username - Username
+   * @param {string} review - Optional review
+   * @param {boolean} isAdmin - Whether user is admin
+   * @returns {Promise<Object>} Watched movie entry
+   */
+  async markAsWatched(filmId, rating, userId, username, review = '', isAdmin = false) {
+    // Find the film in the shared list cache
+    const filmEntry = this.sharedListCache.find(entry => 
+      entry.film && entry.film.id === filmId
+    );
+    
+    if (!filmEntry) {
+      throw new Error('Film not found in shared list');
+    }
+    
+    // Add to watched movies using the API
+    try {
+      const watchedEntry = await this.addWatchedMovie(
+        this.currentListId,
+        filmEntry.film,
+        rating,
+        review
+      );
+      
+      // Add to watched cache
+      this.watchedMoviesCache.push({
+        ...watchedEntry,
+        film: filmEntry.film,
+        addedBy: username,
+        addedByUserId: userId
+      });
+      
+      // Remove from shared list cache
+      this.removeFilmFromList(filmEntry.id);
+      
+      return watchedEntry;
+    } catch (error) {
+      console.error('Error marking as watched:', error.message);
+      throw error;
     }
   }
 }
