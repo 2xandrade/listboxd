@@ -58,7 +58,7 @@ class InfiniteScroll {
                 const hasMore = await this.loadMoreCallback();
                 this.hasMore = hasMore;
             } catch (error) {
-                console.error('Error loading more items:', error);
+                console.error('Error loading more items:', error.message);
             } finally {
                 this.isLoading = false;
             }

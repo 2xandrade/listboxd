@@ -14,7 +14,7 @@ class StorageManager {
       const serialized = JSON.stringify(data);
       localStorage.setItem(key, serialized);
     } catch (error) {
-      console.error(`Error saving data to localStorage for key "${key}":`, error);
+      console.error(`Error saving data to localStorage for key "${key}":`, error.message);
       throw new Error(`Failed to save data: ${error.message}`);
     }
   }
@@ -32,7 +32,7 @@ class StorageManager {
       }
       return JSON.parse(serialized);
     } catch (error) {
-      console.error(`Error loading data from localStorage for key "${key}":`, error);
+      console.error(`Error loading data from localStorage for key "${key}":`, error.message);
       throw new Error(`Failed to load data: ${error.message}`);
     }
   }
@@ -45,7 +45,7 @@ class StorageManager {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.error(`Error removing data from localStorage for key "${key}":`, error);
+      console.error(`Error removing data from localStorage for key "${key}":`, error.message);
       throw new Error(`Failed to remove data: ${error.message}`);
     }
   }
@@ -57,7 +57,7 @@ class StorageManager {
     try {
       localStorage.clear();
     } catch (error) {
-      console.error('Error clearing localStorage:', error);
+      console.error('Error clearing localStorage:', error.message);
       throw new Error(`Failed to clear storage: ${error.message}`);
     }
   }

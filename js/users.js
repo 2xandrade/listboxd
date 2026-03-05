@@ -19,7 +19,7 @@ class UserService {
       const response = await this.googleSheetsApi.getUserByEmail(email);
       return response.data || null;
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('Error fetching user:', error.message);
       return null;
     }
   }

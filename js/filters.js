@@ -31,7 +31,7 @@ class FilterManager {
         return JSON.parse(saved);
       }
     } catch (error) {
-      console.error('Error loading filter state:', error);
+      console.error('Error loading filter state:', error.message);
     }
     return null;
   }
@@ -44,7 +44,7 @@ class FilterManager {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.activeFilters));
     } catch (error) {
-      console.error('Error saving filter state:', error);
+      console.error('Error saving filter state:', error.message);
     }
   }
 

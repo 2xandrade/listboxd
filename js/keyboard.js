@@ -117,7 +117,7 @@ class KeyboardShortcuts {
             try {
                 shortcut.callback(e);
             } catch (error) {
-                console.error('Error executing keyboard shortcut:', error);
+                console.error('Error executing keyboard shortcut:', error.message);
             }
         }
     }

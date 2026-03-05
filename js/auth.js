@@ -50,6 +50,11 @@ class AuthService {
    * @throws {Error} If authentication fails
    */
   async login(email, password) {
+    // Check if API is configured
+    if (!this.googleSheetsApi) {
+      throw new Error('API não configurada. Configure o Google Sheets API no arquivo config.js para fazer login.');
+    }
+    
     try {
       // Call Google Sheets API for authentication
       const response = await this.googleSheetsApi.login({
@@ -104,6 +109,11 @@ class AuthService {
    * @throws {Error} If registration fails
    */
   async register(nome, email, password) {
+    // Check if API is configured
+    if (!this.googleSheetsApi) {
+      throw new Error('API não configurada. Configure o Google Sheets API no arquivo config.js para usar o cadastro.');
+    }
+    
     try {
       // Call Google Sheets API to register user
       const response = await this.googleSheetsApi.registerUser({

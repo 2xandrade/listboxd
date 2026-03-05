@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         googleSheetsApi = new GoogleSheetsApi(CONFIG.googleSheets.apiUrl);
         console.log('✅ Google Sheets API inicializada com sucesso');
       } catch (error) {
-        console.error('❌ Erro ao inicializar Google Sheets API:', error);
+        console.error('❌ Erro ao inicializar Google Sheets API:', error.message);
         console.warn('⚠️  Continuando sem API - funcionalidades de backend não estarão disponíveis');
         googleSheetsApi = null;
       }
@@ -132,8 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('✅ Aplicação inicializada com sucesso!');
   } catch (error) {
-    console.error('❌ ERRO FATAL durante inicialização:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('❌ ERRO FATAL durante inicialização:', error.message);
     
     // Try to show login screen anyway
     console.log('🔧 Tentando mostrar tela de login mesmo com erro...');
@@ -565,7 +564,7 @@ function initializeFilmListing() {
       // Return whether there are more pages
       return currentPage < totalPages;
     } catch (error) {
-      console.error('Error loading more films:', error);
+      console.error('Error loading more films:', error.message);
       hideInfiniteScrollLoading();
       notificationService.error(`Erro ao carregar mais filmes: ${error.message}`);
       return false;

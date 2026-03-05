@@ -25,7 +25,7 @@ class ListService {
       const response = await this.googleSheetsApi.getListsByUser(currentUser.id);
       return response.data || [];
     } catch (error) {
-      console.error('Error fetching lists:', error);
+      console.error('Error fetching lists:', error.message);
       throw new Error(`Failed to fetch lists: ${error.message}`);
     }
   }
@@ -57,7 +57,7 @@ class ListService {
       
       return response.data;
     } catch (error) {
-      console.error('Error creating list:', error);
+      console.error('Error creating list:', error.message);
       throw new Error(`Failed to create list: ${error.message}`);
     }
   }
@@ -107,7 +107,7 @@ class ListService {
       
       return response.data;
     } catch (error) {
-      console.error('Error adding watched movie:', error);
+      console.error('Error adding watched movie:', error.message);
       throw new Error(`Failed to add watched movie: ${error.message}`);
     }
   }
@@ -137,7 +137,7 @@ class ListService {
       
       return response.data || [];
     } catch (error) {
-      console.error('Error fetching movies:', error);
+      console.error('Error fetching movies:', error.message);
       throw new Error(`Failed to fetch movies: ${error.message}`);
     }
   }
