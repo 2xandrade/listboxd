@@ -324,8 +324,12 @@ class ListService {
       throw new Error('Film not found in shared list');
     }
     
-    // Add to watched movies using the API
     try {
+      // First, we need to delete the old entry (nota=0) from Google Sheets
+      // TODO: Implement deleteMovie endpoint
+      // For now, we'll just add a new entry with the rating
+      
+      // Add to watched movies using the API with real rating
       const watchedEntry = await this.addWatchedMovie(
         this.currentListId,
         filmEntry.film,
@@ -342,7 +346,10 @@ class ListService {
       });
       
       // Remove from shared list cache
-      this.removeFilmFromList(filmEntry.id);
+      const index = this.sharedListCache.findIndex(e => e.id === filmEntry.id);
+      if (index !== -1) {
+        this.sharedListCache.splice(index, 1);
+      }
       
       return watchedEntry;
     } catch (error) {
