@@ -122,10 +122,17 @@ class GoogleSheetsApi {
   }
 
   async _post(body) {
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+    // Use GET with query params to avoid CORS preflight
+    const url = new URL(this.baseUrl);
+    Object.entries(body).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        url.searchParams.set(key, String(value));
+      }
+    });
+
+    const response = await fetch(url.toString(), { 
+      method: 'GET',
+      redirect: 'follow'
     });
     return this._parseResponse(response);
   }
