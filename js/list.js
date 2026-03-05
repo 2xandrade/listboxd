@@ -19,15 +19,30 @@ class ListService {
    */
   async initialize() {
     try {
-      const lists = await this.getListsByUser();
-      if (lists && lists.length > 0) {
+      let lists = await this.getListsByUser();
+      
+      // If no lists exist, create a default one
+      if (!lists || lists.length === 0) {
+        console.log('📝 Criando lista padrão...');
+        const defaultList = await this.createList(
+          'Filmes para Assistir',
+          'Lista compartilhada de filmes'
+        );
+        this.currentListId = defaultList.id_lista;
+        this.sharedListCache = [];
+        console.log('✅ Lista padrão criada:', this.currentListId);
+      } else {
         // Use the first list as default
         this.currentListId = lists[0].id_lista;
+        console.log('📋 Usando lista existente:', this.currentListId);
         // Load movies from this list
         await this.refreshCache();
       }
     } catch (error) {
       console.error('Error initializing ListService:', error.message);
+      // Initialize with empty cache to prevent errors
+      this.sharedListCache = [];
+      this.watchedMoviesCache = [];
     }
   }
 
@@ -205,6 +220,14 @@ class ListService {
   }
 
   /**
+   * Get watched movies list (cached)
+   * @returns {Array} Array of watched movie entries
+   */
+  getWatchedList() {
+    return this.watchedMoviesCache || [];
+  }
+
+  /**
    * Add film to shared list (legacy method for compatibility)
    * @param {Object} film - Film object
    * @param {string} userId - User ID
@@ -212,14 +235,23 @@ class ListService {
    * @returns {Object} List entry
    */
   addFilmToList(film, userId, username) {
-    // For now, just add to cache
-    // In a real implementation, this should call the API
+    // Create entry with proper structure
     const entry = {
+      id: `temp-${Date.now()}`,
       id_filme: `temp-${Date.now()}`,
+      film: {
+        id: film.id,
+        title: film.title,
+        year: film.year,
+        poster: film.poster,
+        rating: film.rating,
+        genres: film.genres || []
+      },
       titulo_filme: film.title,
       ano: film.year,
       tmdb_id: film.id,
       addedBy: username,
+      addedByUserId: userId,
       addedAt: new Date().toISOString()
     };
     

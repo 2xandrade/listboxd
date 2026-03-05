@@ -128,16 +128,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Implement route protection - check authentication on page load
     console.log('🔐 Verificando autenticação...');
-    checkAuthenticationAndRedirect();
     
-    // Initialize ListService cache if user is logged in
+    // Initialize ListService cache if user is logged in BEFORE checking auth
     const currentUser = authService.getCurrentUser();
     if (currentUser && listService) {
       console.log('📋 Inicializando cache da lista...');
-      await listService.initialize().catch(err => {
+      try {
+        await listService.initialize();
+        console.log('✅ Cache da lista inicializado');
+      } catch (err) {
         console.warn('⚠️  Erro ao inicializar cache da lista:', err.message);
-      });
+      }
     }
+    
+    // Now check authentication and show appropriate UI
+    checkAuthenticationAndRedirect();
     
     console.log('✅ Aplicação inicializada com sucesso!');
   } catch (error) {
