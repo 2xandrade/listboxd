@@ -45,6 +45,8 @@ function handleRequest(e) {
         return login(data);
       case 'getUserByEmail':
         return getUserByEmail(data);
+      case 'getAllUsers':
+        return getAllUsers(data);
       case 'createList':
         return createList(data);
       case 'getListsByUser':
@@ -55,6 +57,10 @@ function handleRequest(e) {
         return addWatchedMovie(data);
       case 'getMoviesByList':
         return getMoviesByList(data);
+      case 'updateMovie':
+        return updateMovie(data);
+      case 'deleteMovie':
+        return deleteMovie(data);
       default:
         return createResponse(false, 'Unknown action: ' + action);
     }
@@ -247,6 +253,55 @@ function getUserByEmail(data) {
   } catch (error) {
     Logger.log('Error in getUserByEmail: ' + error.toString());
     return createResponse(false, 'Error fetching user: ' + error.toString());
+  }
+}
+
+/**
+ * Get all users (admin only)
+ * Required: id_usuario (must be admin)
+ */
+function getAllUsers(data) {
+  try {
+    const { id_usuario } = data;
+    
+    if (!id_usuario) {
+      return createResponse(false, 'Missing required field: id_usuario');
+    }
+    
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_USUARIOS);
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    
+    // Check if requesting user is admin
+    let isAdmin = false;
+    for (let i = 1; i < values.length; i++) {
+      if (values[i][0] === id_usuario && values[i][4] === true) {
+        isAdmin = true;
+        break;
+      }
+    }
+    
+    if (!isAdmin) {
+      return createResponse(false, 'Unauthorized: Admin access required');
+    }
+    
+    // Get all users (excluding password hash)
+    const users = [];
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      users.push({
+        id_usuario: row[0],
+        nome: row[1],
+        email: row[2],
+        is_admin: row[4] || false,
+        criado_em: row[5]
+      });
+    }
+    
+    return createResponse(true, 'Users retrieved successfully', users);
+  } catch (error) {
+    Logger.log('Error in getAllUsers: ' + error.toString());
+    return createResponse(false, 'Error fetching users: ' + error.toString());
   }
 }
 
@@ -475,5 +530,93 @@ function getMoviesByList(data) {
   } catch (error) {
     Logger.log('Error in getMoviesByList: ' + error.toString());
     return createResponse(false, 'Error fetching movies: ' + error.toString());
+  }
+}
+
+/**
+ * Update a movie entry
+ * Required: id_filme, nota
+ * Optional: assistido_em, review
+ */
+function updateMovie(data) {
+  try {
+    const {
+      id_filme,
+      nota,
+      assistido_em = getCurrentTimestamp(),
+      review = ''
+    } = data;
+    
+    if (!id_filme || nota === undefined) {
+      return createResponse(false, 'Missing required fields: id_filme, nota');
+    }
+    
+    const notaNum = parseFloat(nota);
+    if (isNaN(notaNum) || notaNum < 0 || notaNum > 5) {
+      return createResponse(false, 'Invalid nota: must be between 0 and 5');
+    }
+    
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_FILMES);
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    
+    // Find the movie by id_filme
+    for (let i = 1; i < values.length; i++) {
+      if (values[i][0] === id_filme) {
+        // Update the row
+        sheet.getRange(i + 1, 6).setValue(notaNum); // Column F (nota)
+        sheet.getRange(i + 1, 7).setValue(assistido_em); // Column G (assistido_em)
+        sheet.getRange(i + 1, 8).setValue(review); // Column H (review)
+        
+        const movieData = {
+          id_filme: values[i][0],
+          id_lista: values[i][1],
+          id_usuario: values[i][2],
+          titulo_filme: values[i][3],
+          ano: values[i][4],
+          nota: notaNum,
+          assistido_em: assistido_em,
+          review: review
+        };
+        
+        return createResponse(true, 'Movie updated successfully', movieData);
+      }
+    }
+    
+    return createResponse(false, 'Movie not found');
+  } catch (error) {
+    Logger.log('Error in updateMovie: ' + error.toString());
+    return createResponse(false, 'Error updating movie: ' + error.toString());
+  }
+}
+
+/**
+ * Delete a movie entry
+ * Required: id_filme
+ */
+function deleteMovie(data) {
+  try {
+    const { id_filme } = data;
+    
+    if (!id_filme) {
+      return createResponse(false, 'Missing required field: id_filme');
+    }
+    
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_FILMES);
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    
+    // Find and delete the row
+    for (let i = 1; i < values.length; i++) {
+      if (values[i][0] === id_filme) {
+        sheet.deleteRow(i + 1);
+        return createResponse(true, 'Movie deleted successfully', { id_filme: id_filme });
+      }
+    }
+    
+    return createResponse(false, 'Movie not found');
+  } catch (error) {
+    Logger.log('Error in deleteMovie: ' + error.toString());
+    return createResponse(false, 'Error deleting movie: ' + error.toString());
   }
 }

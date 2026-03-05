@@ -109,6 +109,42 @@ class GoogleSheetsApi {
     });
   }
 
+  /**
+   * Get all users (admin only)
+   * @param {string} idUsuario - Admin user ID
+   * @returns {Promise<Object>}
+   */
+  async getAllUsers(idUsuario) {
+    return this._get({
+      action: 'getAllUsers',
+      id_usuario: idUsuario
+    });
+  }
+
+  /**
+   * Update a movie entry
+   * @param {{id_filme: string, nota: number, assistido_em?: string, review?: string}} payload
+   * @returns {Promise<Object>}
+   */
+  async updateMovie(payload) {
+    return this._post({
+      action: 'updateMovie',
+      ...payload
+    });
+  }
+
+  /**
+   * Delete a movie entry
+   * @param {string} idFilme - Movie ID
+   * @returns {Promise<Object>}
+   */
+  async deleteMovie(idFilme) {
+    return this._post({
+      action: 'deleteMovie',
+      id_filme: idFilme
+    });
+  }
+
   async _get(params) {
     const url = new URL(this.baseUrl);
     Object.entries(params).forEach(([key, value]) => {

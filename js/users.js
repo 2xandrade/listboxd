@@ -29,10 +29,19 @@ class UserService {
    * @returns {Promise<Array>} Array of user objects
    */
   async getAllUsers() {
-    // TODO: Implement getAllUsers endpoint in Google Sheets API
-    // For now, return empty array
-    console.warn('getAllUsers not implemented yet');
-    return [];
+    try {
+      // Get current user to pass as admin verification
+      const currentUser = JSON.parse(localStorage.getItem('letterboxd_session') || '{}');
+      if (!currentUser || !currentUser.id) {
+        throw new Error('Not authenticated');
+      }
+      
+      const response = await this.googleSheetsApi.getAllUsers(currentUser.id);
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching all users:', error.message);
+      return [];
+    }
   }
 
   /**
