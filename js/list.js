@@ -8,6 +8,44 @@ class ListService {
   constructor(googleSheetsApi, authService) {
     this.googleSheetsApi = googleSheetsApi;
     this.authService = authService;
+    this.sharedListCache = []; // Cache local da lista compartilhada
+    this.watchedMoviesCache = []; // Cache de filmes assistidos
+    this.currentListId = null; // ID da lista atual
+  }
+
+  /**
+   * Initialize the service by loading the default list
+   * @returns {Promise<void>}
+   */
+  async initialize() {
+    try {
+      const lists = await this.getListsByUser();
+      if (lists && lists.length > 0) {
+        // Use the first list as default
+        this.currentListId = lists[0].id_lista;
+        // Load movies from this list
+        await this.refreshCache();
+      }
+    } catch (error) {
+      console.error('Error initializing ListService:', error.message);
+    }
+  }
+
+  /**
+   * Refresh the local cache from Google Sheets
+   * @returns {Promise<void>}
+   */
+  async refreshCache() {
+    if (!this.currentListId) {
+      return;
+    }
+    
+    try {
+      const movies = await this.getMoviesByList(this.currentListId);
+      this.sharedListCache = movies || [];
+    } catch (error) {
+      console.error('Error refreshing cache:', error.message);
+    }
   }
 
   /**
@@ -139,6 +177,64 @@ class ListService {
     } catch (error) {
       console.error('Error fetching movies:', error.message);
       throw new Error(`Failed to fetch movies: ${error.message}`);
+    }
+  }
+
+  /**
+   * Check if a film is in the shared list (by TMDB ID)
+   * Requirements: 16.1
+   * @param {number} filmId - TMDB film ID
+   * @returns {boolean} True if film is in list
+   */
+  isFilmInList(filmId) {
+    // Check in local cache
+    return this.sharedListCache.some(movie => {
+      // Try to match by TMDB ID stored in the movie data
+      return movie.tmdb_id === filmId || 
+             movie.id_filme === String(filmId) ||
+             movie.titulo_filme === filmId; // Fallback
+    });
+  }
+
+  /**
+   * Get the shared list (cached)
+   * @returns {Array} Array of list entries
+   */
+  getSharedList() {
+    return this.sharedListCache || [];
+  }
+
+  /**
+   * Add film to shared list (legacy method for compatibility)
+   * @param {Object} film - Film object
+   * @param {string} userId - User ID
+   * @param {string} username - Username
+   * @returns {Object} List entry
+   */
+  addFilmToList(film, userId, username) {
+    // For now, just add to cache
+    // In a real implementation, this should call the API
+    const entry = {
+      id_filme: `temp-${Date.now()}`,
+      titulo_filme: film.title,
+      ano: film.year,
+      tmdb_id: film.id,
+      addedBy: username,
+      addedAt: new Date().toISOString()
+    };
+    
+    this.sharedListCache.push(entry);
+    return entry;
+  }
+
+  /**
+   * Remove film from shared list (legacy method)
+   * @param {string} entryId - Entry ID
+   */
+  removeFilmFromList(entryId) {
+    const index = this.sharedListCache.findIndex(movie => movie.id_filme === entryId);
+    if (index !== -1) {
+      this.sharedListCache.splice(index, 1);
     }
   }
 }

@@ -73,7 +73,7 @@ function debounce(func, wait) {
 }
 
 // Initialize app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   try {
     console.log('🚀 Iniciando aplicação...');
     
@@ -129,6 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Implement route protection - check authentication on page load
     console.log('🔐 Verificando autenticação...');
     checkAuthenticationAndRedirect();
+    
+    // Initialize ListService cache if user is logged in
+    const currentUser = authService.getCurrentUser();
+    if (currentUser && listService) {
+      console.log('📋 Inicializando cache da lista...');
+      await listService.initialize().catch(err => {
+        console.warn('⚠️  Erro ao inicializar cache da lista:', err.message);
+      });
+    }
     
     console.log('✅ Aplicação inicializada com sucesso!');
   } catch (error) {
