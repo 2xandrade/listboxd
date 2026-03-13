@@ -82,9 +82,14 @@ describe('UserService - Google Sheets API Integration', () => {
       const result = await userService.getUserByEmail('test@example.com');
       
       expect(result).toBeNull();
+      // ErrorRecovery logs with structured format
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error fetching user:',
-        'Network error'
+        '[ErrorRecovery]',
+        expect.objectContaining({
+          level: 'ERROR',
+          message: 'Network error',
+          context: 'UserService.getUserByEmail'
+        })
       );
       
       consoleErrorSpy.mockRestore();

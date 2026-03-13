@@ -140,6 +140,14 @@ async function handleCreateUser(event) {
     // Reload user list
     loadUsers();
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'createUser form submit',
+      nome,
+      email,
+      isAdmin,
+      errorMessage: error.message
+    });
     notificationService.error(`Erro ao criar usuário: ${error.message}`);
   } finally {
     // Remove button loading state
@@ -220,6 +228,15 @@ function handleSaveUser(event) {
     notificationService.success('Usuário atualizado com sucesso!');
     loadUsers();
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'updateUser',
+      userId,
+      nome,
+      email,
+      isAdmin,
+      errorMessage: error.message
+    });
     notificationService.error(`Erro ao atualizar usuário: ${error.message}`);
     notificationService.setButtonLoading(saveBtn, false);
   }
@@ -249,6 +266,12 @@ function handleDeleteUser(event) {
     notificationService.success('Usuário removido com sucesso!');
     loadUsers();
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'deleteUser',
+      userId,
+      errorMessage: error.message
+    });
     notificationService.error(`Erro ao remover usuário: ${error.message}`);
   }
 }

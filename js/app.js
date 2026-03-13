@@ -16,6 +16,8 @@ let googleSheetsApi;
 let filterChips;
 let streamingService;
 let infiniteScroll;
+let cacheManager;
+let syncManager;
 let currentCategory = 'popular';
 let currentPage = 1;
 let totalPages = 1;
@@ -74,79 +76,113 @@ function debounce(func, wait) {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
+  // Wrap initialization in ErrorRecovery.retryWithBackoff (Requirements 4.1, 4.2)
   try {
-    console.log('🚀 Iniciando aplicação...');
-    
-    // Validate configuration
-    let configValid = true;
-    
-    if (!CONFIG || !CONFIG.googleSheets || !CONFIG.googleSheets.apiUrl) {
-      console.error('❌ Configuração inválida: CONFIG.googleSheets.apiUrl não está definida');
-      console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
-      configValid = false;
-    } else if (CONFIG.googleSheets.apiUrl.includes('YOUR_SCRIPT_ID')) {
-      console.error('❌ Configuração inválida: URL da API do Google Sheets ainda está com o placeholder');
-      console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
-      configValid = false;
-    }
-    
-    // Initialize Google Sheets API only if config is valid
-    if (configValid) {
-      try {
-        googleSheetsApi = new GoogleSheetsApi(CONFIG.googleSheets.apiUrl);
-        console.log('✅ Google Sheets API inicializada com sucesso');
-      } catch (error) {
-        console.error('❌ Erro ao inicializar Google Sheets API:', error.message);
-        console.warn('⚠️  Continuando sem API - funcionalidades de backend não estarão disponíveis');
+    await ErrorRecovery.retryWithBackoff(async () => {
+      console.log('🚀 Iniciando aplicação...');
+      
+      // Validate configuration
+      let configValid = true;
+      
+      if (!CONFIG || !CONFIG.googleSheets || !CONFIG.googleSheets.apiUrl) {
+        console.error('❌ Configuração inválida: CONFIG.googleSheets.apiUrl não está definida');
+        console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
+        configValid = false;
+      } else if (CONFIG.googleSheets.apiUrl.includes('YOUR_SCRIPT_ID')) {
+        console.error('❌ Configuração inválida: URL da API do Google Sheets ainda está com o placeholder');
+        console.warn('⚠️  Continuando em modo de desenvolvimento - funcionalidades de API não estarão disponíveis');
+        configValid = false;
+      }
+      
+      // Initialize Google Sheets API only if config is valid
+      if (configValid) {
+        try {
+          googleSheetsApi = new GoogleSheetsApi(CONFIG.googleSheets.apiUrl);
+          console.log('✅ Google Sheets API inicializada com sucesso');
+        } catch (error) {
+          // Log API responses and status codes on errors (Requirement 6.2)
+          ErrorRecovery.logError(error, {
+            context: 'GoogleSheetsApi initialization',
+            apiUrl: CONFIG.googleSheets.apiUrl,
+            errorMessage: error.message
+          });
+          console.warn('⚠️  Continuando sem API - funcionalidades de backend não estarão disponíveis');
+          googleSheetsApi = null;
+        }
+      } else {
         googleSheetsApi = null;
       }
-    } else {
-      googleSheetsApi = null;
-    }
-    
-    // Initialize services with dependencies
-    console.log('📦 Inicializando serviços...');
-    storageManager = new StorageManager();
-    userService = new UserService(googleSheetsApi);
-    authService = new AuthService(storageManager, googleSheetsApi);
-    filmService = new FilmService();
-    listService = new ListService(googleSheetsApi, authService);
-    filterManager = new FilterManager(listService);
-    watchedFilterManager = new FilterManager(listService);
-    watchedFilterManager.storageKey = 'watched_filter_state'; // Use separate storage key
-    tabManager = new TabManager(storageManager);
-    streamingService = new StreamingService();
-    
-    console.log('✅ Todos os serviços inicializados');
-    
-    // Initialize keyboard shortcuts
-    console.log('⌨️  Inicializando atalhos de teclado...');
-    initializeKeyboardShortcuts();
-    
-    // Note: Default user creation is now handled by the backend API
-    // No need to create users on the frontend
-    
-    // Implement route protection - check authentication on page load
-    console.log('🔐 Verificando autenticação...');
-    
-    // Initialize ListService cache if user is logged in BEFORE checking auth
-    const currentUser = authService.getCurrentUser();
-    if (currentUser && listService) {
-      console.log('📋 Inicializando cache da lista...');
-      try {
-        await listService.initialize();
-        console.log('✅ Cache da lista inicializado');
-      } catch (err) {
-        console.warn('⚠️  Erro ao inicializar cache da lista:', err.message);
+      
+      // Initialize services with dependencies
+      console.log('📦 Inicializando serviços...');
+      storageManager = new StorageManager();
+      userService = new UserService(googleSheetsApi);
+      authService = new AuthService(storageManager, googleSheetsApi);
+      filmService = new FilmService();
+      
+      // Create CacheManager (Requirement 1.5, 3.5)
+      cacheManager = new CacheManager(storageManager);
+      console.log('✅ CacheManager inicializado');
+      
+      // Create SyncManager with googleSheetsApi and CacheManager (Requirement 3.5)
+      if (googleSheetsApi) {
+        syncManager = new SyncManager(googleSheetsApi, cacheManager);
+        console.log('✅ SyncManager inicializado');
+      } else {
+        syncManager = null;
+        console.warn('⚠️  SyncManager não inicializado (API não disponível)');
       }
-    }
+      
+      // Pass CacheManager and SyncManager to ListService constructor (Requirement 3.5)
+      listService = new ListService(googleSheetsApi, authService, cacheManager, syncManager);
+      console.log('✅ ListService inicializado com CacheManager e SyncManager');
+      
+      filterManager = new FilterManager(listService);
+      watchedFilterManager = new FilterManager(listService);
+      watchedFilterManager.storageKey = 'watched_filter_state'; // Use separate storage key
+      tabManager = new TabManager(storageManager);
+      streamingService = new StreamingService();
+      
+      console.log('✅ Todos os serviços inicializados');
+      
+      // Initialize keyboard shortcuts
+      console.log('⌨️  Inicializando atalhos de teclado...');
+      initializeKeyboardShortcuts();
+      
+      // Initialize offline mode support (Requirements 7.2, 7.3, 7.4)
+      initializeOfflineMode();
+      
+      // Note: Default user creation is now handled by the backend API
+      // No need to create users on the frontend
+      
+      // Implement route protection - check authentication on page load
+      console.log('🔐 Verificando autenticação...');
+      
+      // Initialize ListService cache if user is logged in BEFORE checking auth
+      const currentUser = authService.getCurrentUser();
+      if (currentUser && listService) {
+        console.log('📋 Inicializando cache da lista...');
+        try {
+          // Add timeout to ListService.initialize() call (Requirement 4.2)
+          await ErrorRecovery.withTimeout(listService.initialize(), 10000);
+          console.log('✅ Cache da lista inicializado');
+        } catch (err) {
+          // Update error handling to use ErrorRecovery.handleApiError() (Requirement 6.3)
+          const errorInfo = ErrorRecovery.handleApiError(err, 'ListService.initialize');
+          console.warn('⚠️  Erro ao inicializar cache da lista:', errorInfo.userMessage);
+        }
+      }
+      
+      // Now check authentication and show appropriate UI
+      checkAuthenticationAndRedirect();
+      
+      console.log('✅ Aplicação inicializada com sucesso!');
+    }, 3, 2000, 15000); // 3 retries, 2s initial delay, 15s timeout (Requirements 4.1, 4.2)
     
-    // Now check authentication and show appropriate UI
-    checkAuthenticationAndRedirect();
-    
-    console.log('✅ Aplicação inicializada com sucesso!');
   } catch (error) {
-    console.error('❌ ERRO FATAL durante inicialização:', error.message);
+    // Update error handling to use ErrorRecovery.handleApiError() (Requirement 6.3)
+    const errorInfo = ErrorRecovery.handleApiError(error, 'Application initialization');
+    console.error('❌ ERRO FATAL durante inicialização:', errorInfo.userMessage);
     
     // Try to show login screen anyway
     console.log('🔧 Tentando mostrar tela de login mesmo com erro...');
@@ -159,7 +195,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Elemento login-section não encontrado no DOM');
       }
     } catch (e) {
-      console.error('❌ Falha ao mostrar tela de login:', e);
+      // Log context information (Requirement 6.5)
+      ErrorRecovery.logError(e, {
+        context: 'Fallback login screen display',
+        errorMessage: e.message
+      });
     }
   }
 });
@@ -228,9 +268,12 @@ function initializeDefaultUser() {
 /**
  * Check authentication and redirect if necessary
  * Implements route protection for the application
- * Requirements: 2.4
+ * Requirements: 2.4, 2.5
  */
 function checkAuthenticationAndRedirect() {
+  // Ensure mutual exclusivity - hide all sections first
+  hideAllSections();
+  
   // Check if user is authenticated
   if (!authService.isAuthenticated()) {
     // User is not authenticated - show login screen
@@ -244,14 +287,17 @@ function checkAuthenticationAndRedirect() {
 
 /**
  * Show login screen
+ * Requirements: 2.1, 2.2
  */
 function showLoginScreen() {
-  // Hide all sections
+  // Hide all sections first to ensure mutual exclusivity
   hideAllSections();
   
   // Show login section
   const loginSection = document.getElementById('login-section');
-  loginSection.classList.remove('hidden');
+  if (loginSection) {
+    loginSection.classList.remove('hidden');
+  }
   
   // Setup auth tab switching
   setupAuthTabs();
@@ -325,7 +371,13 @@ function setupLoginForm() {
       // Attempt login
       await authService.login(email, password);
       
-      // Login successful - show success notification
+      // Login successful - hide login screen immediately (Requirement 2.1)
+      const loginSection = document.getElementById('login-section');
+      if (loginSection) {
+        loginSection.classList.add('hidden');
+      }
+      
+      // Show success notification
       notificationService.success('Login realizado com sucesso!');
       
       // Show authenticated UI
@@ -450,15 +502,23 @@ function setButtonLoading(button, isLoading) {
 
 /**
  * Show authenticated UI (film listing and shared list)
- * Requirements: 13.1, 13.2, 13.5
+ * Requirements: 13.1, 13.2, 13.5, 2.3, 2.5
  */
 function showAuthenticatedUI() {
-  // Hide all sections first (Requirement 13.1)
+  // Hide all sections first to ensure mutual exclusivity (Requirements 13.1, 2.3, 2.5)
   hideAllSections();
+  
+  // Defensive check: ensure login section is hidden
+  const loginSection = document.getElementById('login-section');
+  if (loginSection && !loginSection.classList.contains('hidden')) {
+    loginSection.classList.add('hidden');
+  }
   
   // Show tab navigation
   const tabsContainer = document.getElementById('main-tabs');
-  tabsContainer.classList.remove('hidden');
+  if (tabsContainer) {
+    tabsContainer.classList.remove('hidden');
+  }
   
   // Initialize tab manager - this will handle showing only the active tab (Requirements 13.2, 13.5)
   tabManager.initialize();
@@ -505,19 +565,21 @@ function handleLogout() {
 
 /**
  * Hide all main sections
+ * Ensures mutual exclusivity of UI sections
+ * Requirements: 2.2, 2.4, 2.5
  */
 function hideAllSections() {
   const sections = ['login-section', 'film-listing', 'shared-list', 'watched-films'];
   sections.forEach(sectionId => {
     const section = document.getElementById(sectionId);
-    if (section) {
+    if (section && !section.classList.contains('hidden')) {
       section.classList.add('hidden');
     }
   });
   
   // Also hide tabs when showing login
   const tabsContainer = document.getElementById('main-tabs');
-  if (tabsContainer) {
+  if (tabsContainer && !tabsContainer.classList.contains('hidden')) {
     tabsContainer.classList.add('hidden');
   }
 }
@@ -578,7 +640,15 @@ function initializeFilmListing() {
       // Return whether there are more pages
       return currentPage < totalPages;
     } catch (error) {
-      console.error('Error loading more films:', error.message);
+      // Log context information (Requirement 6.5)
+      ErrorRecovery.logError(error, {
+        context: 'infiniteScroll loadMore',
+        currentPage,
+        totalPages,
+        currentSearchQuery,
+        currentCategory,
+        errorMessage: error.message
+      });
       hideInfiniteScrollLoading();
       notificationService.error(`Erro ao carregar mais filmes: ${error.message}`);
       return false;
@@ -674,17 +744,24 @@ async function loadFilms(category, page = 1) {
     renderFilms(result.films);
 
     // Pagination controls are no longer needed with infinite scroll
-  } catch (error) {
-    // Clear skeletons and show error
-    filmsGrid.innerHTML = '';
-    
-    // Show error notification
-    const errorMessage = `Erro ao carregar filmes: ${error.message}`;
-    notificationService.error(errorMessage);
-    
-    errorEl.textContent = errorMessage;
-    errorEl.classList.remove('hidden');
-  }
+    } catch (error) {
+      // Log context information (Requirement 6.5)
+      ErrorRecovery.logError(error, {
+        context: 'loadFilms',
+        category,
+        page,
+        errorMessage: error.message
+      });
+      // Clear skeletons and show error
+      filmsGrid.innerHTML = '';
+      
+      // Show error notification
+      const errorMessage = `Erro ao carregar filmes: ${error.message}`;
+      notificationService.error(errorMessage);
+      
+      errorEl.textContent = errorMessage;
+      errorEl.classList.remove('hidden');
+    }
 }
 
 /**
@@ -726,6 +803,13 @@ async function searchFilms(query, page = 1) {
       // Pagination controls are no longer needed with infinite scroll
     }
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'searchFilms',
+      query,
+      page,
+      errorMessage: error.message
+    });
     // Clear skeletons and show error
     filmsGrid.innerHTML = '';
     
@@ -970,7 +1054,7 @@ function handleModalEscape(e) {
 /**
  * Handle adding or removing a film from the shared list
  * @param {Object} film - Film object to add or remove
- * Requirements: 16.2, 16.3, 16.5
+ * Requirements: 16.2, 16.3, 16.5, 7.2, 7.3
  */
 async function handleAddOrRemoveFromList(film) {
   try {
@@ -981,6 +1065,9 @@ async function handleAddOrRemoveFromList(film) {
       notificationService.error('Você precisa estar autenticado para gerenciar filmes.');
       return;
     }
+    
+    // Check if online (Requirements 7.2, 7.3)
+    const isOnline = syncManager ? syncManager.isOnline() : navigator.onLine;
     
     // Check if film is already in the list
     const isInList = listService.isFilmInList(film.id);
@@ -993,8 +1080,12 @@ async function handleAddOrRemoveFromList(film) {
       if (entry) {
         listService.removeFilmFromList(entry.id);
         
-        // Show success notification
-        notificationService.success(`"${film.title}" foi removido da lista compartilhada!`);
+        // Show success notification with offline context (Requirements 7.2, 7.3)
+        if (isOnline) {
+          notificationService.success(`"${film.title}" foi removido da lista compartilhada!`);
+        } else {
+          notificationService.success(`"${film.title}" foi removido localmente. A alteração será sincronizada quando você estiver online.`);
+        }
         
         // Update button state immediately (Requirement 16.5)
         updateFilmCardButton(film.id, false);
@@ -1015,8 +1106,12 @@ async function handleAddOrRemoveFromList(film) {
       // Add film to list
       listService.addFilmToList(filmWithStreaming, currentUser.id, currentUser.username);
       
-      // Show success notification
-      notificationService.success(`"${film.title}" foi adicionado à lista compartilhada!`);
+      // Show success notification with offline context (Requirements 7.2, 7.3)
+      if (isOnline) {
+        notificationService.success(`"${film.title}" foi adicionado à lista compartilhada!`);
+      } else {
+        notificationService.success(`"${film.title}" foi adicionado localmente. A alteração será sincronizada quando você estiver online.`);
+      }
       
       // Update button state immediately (Requirement 16.5)
       updateFilmCardButton(film.id, true);
@@ -1024,10 +1119,18 @@ async function handleAddOrRemoveFromList(film) {
       // Refresh shared list display
       renderSharedList();
     }
-  } catch (error) {
-    // Show error notification
-    notificationService.error(`Erro ao gerenciar filme: ${error.message}`);
-  }
+    } catch (error) {
+      // Log context information (Requirement 6.5)
+      ErrorRecovery.logError(error, {
+        context: 'handleAddOrRemoveFromList',
+        filmId: film.id,
+        filmTitle: film.title,
+        isInList,
+        errorMessage: error.message
+      });
+      // Show error notification
+      notificationService.error(`Erro ao gerenciar filme: ${error.message}`);
+    }
 }
 
 /**
@@ -1082,6 +1185,14 @@ function handleAddToList(film) {
     // Refresh shared list display
     renderSharedList();
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'handleAddToList',
+      filmId: film.id,
+      filmTitle: film.title,
+      userId: currentUser?.id,
+      errorMessage: error.message
+    });
     // Show error notification
     notificationService.error(`Erro ao adicionar filme: ${error.message}`);
   }
@@ -1672,6 +1783,12 @@ function handleRemoveFromList(entryId) {
     // Refresh display
     renderSharedList();
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'handleRemoveFromList',
+      entryId,
+      errorMessage: error.message
+    });
     notificationService.error(`Erro ao remover filme: ${error.message}`);
   }
 }
@@ -1821,7 +1938,7 @@ function showRatingModal(filmId) {
 /**
  * Handle marking a film as watched
  * @param {number} filmId - TMDB film ID
- * Requirements: 12.2, 12.3, 12.6, 12.8, 17.1, 17.2
+ * Requirements: 12.2, 12.3, 12.6, 12.8, 17.1, 17.2, 7.2, 7.3
  */
 async function handleMarkAsWatched(filmId) {
   // Get current authenticated user
@@ -1849,16 +1966,32 @@ async function handleMarkAsWatched(filmId) {
   const { rating, review } = result;
   
   try {
+    // Check if online (Requirements 7.2, 7.3)
+    const isOnline = syncManager ? syncManager.isOnline() : navigator.onLine;
+    
     // Mark as watched (pass isAdmin flag)
     listService.markAsWatched(filmId, rating, currentUser.id, currentUser.username, review, currentUser.isAdmin);
     
-    // Show success notification
-    notificationService.success('Filme marcado como assistido!');
+    // Show success notification with offline context (Requirements 7.2, 7.3)
+    if (isOnline) {
+      notificationService.success('Filme marcado como assistido!');
+    } else {
+      notificationService.success('Filme marcado como assistido localmente. A alteração será sincronizada quando você estiver online.');
+    }
     
     // Refresh both lists
     renderSharedList();
     renderWatchedFilms();
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'handleMarkAsWatched',
+      filmId,
+      rating,
+      userId: currentUser?.id,
+      username: currentUser?.username,
+      errorMessage: error.message
+    });
     notificationService.error(`Erro ao marcar filme como assistido: ${error.message}`);
   }
 }
@@ -2457,6 +2590,15 @@ async function handleEditRating(watchedId, currentRating) {
     // Refresh watched films display
     renderWatchedFilms();
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'handleEditRating',
+      watchedId,
+      currentRating,
+      newRating,
+      userId: currentUser?.id,
+      errorMessage: error.message
+    });
     notificationService.error(`Erro ao atualizar avaliação: ${error.message}`);
   }
 }
@@ -2500,6 +2642,15 @@ function handleEditReview(watchedId, currentReview) {
     // Refresh watched films display
     renderWatchedFilms();
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'handleEditReview',
+      watchedId,
+      currentReview,
+      newReview,
+      userId: currentUser?.id,
+      errorMessage: error.message
+    });
     notificationService.error(`Erro ao atualizar review: ${error.message}`);
   }
 }
@@ -2539,6 +2690,98 @@ function handleRemoveWatched(watchedId) {
     // Refresh watched films display
     renderWatchedFilms();
   } catch (error) {
+    // Log context information (Requirement 6.5)
+    ErrorRecovery.logError(error, {
+      context: 'handleRemoveWatched',
+      watchedId,
+      userId: currentUser?.id,
+      errorMessage: error.message
+    });
     notificationService.error(`Erro ao remover filme: ${error.message}`);
   }
+}
+
+/**
+ * Initialize offline mode support
+ * Add online/offline event listeners and display offline indicator
+ * Requirements: 7.2, 7.3, 7.4
+ */
+function initializeOfflineMode() {
+  const offlineIndicator = document.getElementById('offline-indicator');
+  
+  if (!offlineIndicator) {
+    console.warn('⚠️  Offline indicator element not found');
+    return;
+  }
+  
+  /**
+   * Show offline indicator
+   * Requirements: 7.3
+   */
+  function showOfflineIndicator() {
+    offlineIndicator.classList.remove('hidden');
+    document.body.classList.add('offline');
+    console.log('📡 Modo offline ativado');
+  }
+  
+  /**
+   * Hide offline indicator
+   * Requirements: 7.4
+   */
+  function hideOfflineIndicator() {
+    offlineIndicator.classList.add('hidden');
+    document.body.classList.remove('offline');
+    console.log('📡 Modo online restaurado');
+  }
+  
+  /**
+   * Handle offline event
+   * Requirements: 7.2, 7.3
+   */
+  function handleOffline() {
+    showOfflineIndicator();
+    
+    // Show notification about offline mode
+    notificationService.info('Você está offline. As alterações serão salvas localmente e sincronizadas quando a conexão for restaurada.');
+    
+    // Log offline state
+    console.log('📡 Conexão perdida - operações serão enfileiradas');
+  }
+  
+  /**
+   * Handle online event
+   * Requirements: 7.4
+   */
+  function handleOnline() {
+    hideOfflineIndicator();
+    
+    // Show notification about connection restored
+    notificationService.success('Conexão restaurada! Sincronizando alterações...');
+    
+    // Trigger sync if SyncManager is available
+    if (syncManager) {
+      syncManager.processSyncQueue().then(() => {
+        console.log('✅ Sincronização concluída após reconexão');
+        notificationService.success('Todas as alterações foram sincronizadas com sucesso!');
+      }).catch(error => {
+        console.error('❌ Erro ao sincronizar após reconexão:', error);
+        notificationService.error('Erro ao sincronizar alterações. Tentaremos novamente em breve.');
+      });
+    }
+    
+    // Log online state
+    console.log('📡 Conexão restaurada - processando fila de sincronização');
+  }
+  
+  // Add event listeners for online/offline events
+  window.addEventListener('offline', handleOffline);
+  window.addEventListener('online', handleOnline);
+  
+  // Check initial online status
+  if (!navigator.onLine) {
+    showOfflineIndicator();
+    console.log('📡 Aplicação iniciada em modo offline');
+  }
+  
+  console.log('✅ Modo offline inicializado');
 }

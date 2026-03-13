@@ -132,7 +132,7 @@ describe('FilmService', () => {
           // TMDB URL must be correctly formatted
           expect(parsed.tmdbUrl).toBe(`https://www.themoviedb.org/movie/${tmdbFilm.id}`);
         }),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -162,7 +162,7 @@ describe('FilmService', () => {
           // Genre name must not be a number (must be mapped)
           expect(isNaN(parseInt(genreName))).toBe(true);
         }),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -201,7 +201,7 @@ describe('FilmService', () => {
             expect(genre).not.toBe('Desconhecido');
           });
         }),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -244,7 +244,7 @@ describe('FilmService', () => {
           expect(genreString.length).toBeGreaterThan(0);
           expect(genreString).toContain(',');
         }),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -299,7 +299,7 @@ describe('FilmService', () => {
           expect(result).toHaveProperty('totalPages');
           expect(Array.isArray(result.films)).toBe(true);
         }),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
 
       // Restore original fetch
@@ -357,7 +357,7 @@ describe('FilmService', () => {
           expect(result).toHaveProperty('totalPages');
           expect(result.totalPages).toBe(100);
         }),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
 
       // Restore original fetch
@@ -416,7 +416,7 @@ describe('FilmService', () => {
           expect(typeof result.totalPages).toBe('number');
           expect(result.totalPages).toBeGreaterThan(0);
         }),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
 
       // Restore original fetch

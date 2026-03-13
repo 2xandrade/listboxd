@@ -4,6 +4,9 @@
  * Requirements: 4.1, 4.2, 4.3
  */
 
+// Import ErrorRecovery for error handling
+const ErrorRecovery = typeof require !== 'undefined' ? require('./error-recovery.js') : window.ErrorRecovery;
+
 class UserService {
   constructor(googleSheetsApi) {
     this.googleSheetsApi = googleSheetsApi;
@@ -19,7 +22,14 @@ class UserService {
       const response = await this.googleSheetsApi.getUserByEmail(email);
       return response.data || null;
     } catch (error) {
-      console.error('Error fetching user:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'UserService.getUserByEmail',
+        email,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       return null;
     }
   }
@@ -39,7 +49,14 @@ class UserService {
       const response = await this.googleSheetsApi.getAllUsers(currentUser.id);
       return response.data || [];
     } catch (error) {
-      console.error('Error fetching all users:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'UserService.getAllUsers',
+        userId: currentUser.id,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       return [];
     }
   }
@@ -61,7 +78,16 @@ class UserService {
       });
       return response.data;
     } catch (error) {
-      console.error('Error creating user:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'UserService.createUser',
+        nome,
+        email,
+        isAdmin,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       throw error;
     }
   }

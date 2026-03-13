@@ -10,6 +10,12 @@
 </head>
 <body>
     <div id="app">
+        <!-- Offline Indicator -->
+        <div id="offline-indicator" class="offline-indicator hidden">
+            <span class="offline-icon">📡</span>
+            <span class="offline-text">Você está offline. As alterações serão sincronizadas quando a conexão for restaurada.</span>
+        </div>
+        
         <header>
             <h1>Letterboxd Manager</h1>
             <nav id="nav-menu"></nav>
@@ -295,6 +301,10 @@
     <script src="js/api.js"></script>
     <script src="js/notifications.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/data-validator.js"></script>
+    <script src="js/error-recovery.js"></script>
+    <script src="js/cache-manager.js"></script>
+    <script src="js/sync-manager.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/users.js"></script>
     <script src="js/films.js"></script>

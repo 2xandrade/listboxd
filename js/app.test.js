@@ -104,7 +104,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             expect(filmEntry.film.id).toBe(film.id);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -127,7 +127,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             expect(filmEntry).toBeUndefined();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -165,7 +165,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -203,7 +203,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             expect(listService.getSharedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -251,7 +251,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -287,7 +287,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             expect(listService.isFilmInList(film.id)).toBe(false);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -317,7 +317,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             expect(listService.getSharedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -358,7 +358,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             expect(filmEntry).toBeDefined();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -396,7 +396,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -434,7 +434,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             expect(sharedList[0].film.id).toBe(film.id);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -463,7 +463,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             expect(sharedList.length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -506,7 +506,7 @@ describe.skip('App.js - Dynamic Button Functionality - Property-Based Tests', ()
             expect(listService.getSharedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });

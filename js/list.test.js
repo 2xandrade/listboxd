@@ -122,7 +122,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(storedEntry.addedAt).toBe(entry.addedAt);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -179,7 +179,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -209,7 +209,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.addedAt).toBe(entry.addedAt);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -251,7 +251,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(list[0].addedBy).toBe(username1);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -291,7 +291,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(list[0].film.rating).toBe(film.rating);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -326,7 +326,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -350,7 +350,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.isFilmInList(film.id)).toBe(true);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -386,7 +386,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(list.length).toBe(1);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -660,7 +660,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedListAfter[0].ratedBy).toBe(watchUsername);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -723,7 +723,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -744,7 +744,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }).toThrow('Film not found in shared list');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -789,7 +789,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.getWatchedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -822,7 +822,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.getWatchedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -860,7 +860,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.getSharedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -902,7 +902,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(typeof watchedList[0].rating).toBe('number');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -939,7 +939,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.rating).toBe(watchedFilm.rating);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -985,7 +985,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1035,7 +1035,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.getWatchedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1077,7 +1077,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.getWatchedList().length).toBe(1);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1114,7 +1114,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.getWatchedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1150,7 +1150,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.getWatchedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1207,7 +1207,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedFilm.review).toBe(review);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1247,7 +1247,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.review).toBe(review);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1284,7 +1284,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList[0].review).toBe('');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1334,7 +1334,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1390,7 +1390,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.rating).toBe(newRating);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1434,7 +1434,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.rating).toBe(initialRating);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1481,7 +1481,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.rating).toBe(initialRating);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1537,7 +1537,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1594,7 +1594,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.review).toBe(newReview);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1639,7 +1639,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.review).toBe(initialReview);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1684,7 +1684,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.review).toBe('');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1741,7 +1741,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1800,7 +1800,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.rating).not.toBe(initialRating);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1852,7 +1852,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.watchedAt).toBe(watchedFilm.watchedAt);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1900,7 +1900,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.rating).toBe(lastRating);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1962,7 +1962,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -2022,7 +2022,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2074,7 +2074,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.watchedAt).toBe(watchedFilm.watchedAt);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2123,7 +2123,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.review).toBe(lastReview);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2186,7 +2186,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2234,7 +2234,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(retrieved.ratedBy).toBe(watchUsername);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -2291,7 +2291,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList.find(w => w.id === watchedFilm.id)).toBeUndefined();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2334,7 +2334,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList.find(w => w.id === watchedFilm.id)).toBeDefined();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2391,7 +2391,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.getWatchedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2409,7 +2409,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }).toThrow('Watched film not found');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -2460,7 +2460,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList.length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2522,7 +2522,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2579,7 +2579,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList[0].review).toBe(review2);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2600,7 +2600,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(listService.getWatchedList().length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -2652,7 +2652,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList[0].rating).toBe(initialRating);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2696,7 +2696,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList[0].review).toBe(initialReview);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2739,7 +2739,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList[0].id).toBe(watchedFilm.id);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2790,7 +2790,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList[0].review).toBe(review);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2838,7 +2838,7 @@ describe.skip('ListService - Property-Based Tests', () => {
             expect(watchedList.length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });

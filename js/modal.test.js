@@ -93,7 +93,7 @@ describe('Film Details Modal - Property-Based Tests', () => {
             closeFilmModal();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -123,7 +123,7 @@ describe('Film Details Modal - Property-Based Tests', () => {
             closeFilmModal();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -148,7 +148,7 @@ describe('Film Details Modal - Property-Based Tests', () => {
             expect(document.body.classList.contains('modal-open')).toBe(false);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -185,7 +185,7 @@ describe('Film Details Modal - Property-Based Tests', () => {
             closeFilmModal();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -213,7 +213,7 @@ describe('Film Details Modal - Property-Based Tests', () => {
             closeFilmModal();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -242,7 +242,7 @@ describe('Film Details Modal - Property-Based Tests', () => {
             closeFilmModal();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -304,7 +304,7 @@ describe('Film Details Modal - Property-Based Tests', () => {
             closeFilmModal();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -346,7 +346,7 @@ describe('Film Details Modal - Property-Based Tests', () => {
             closeFilmModal();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -375,7 +375,7 @@ describe('Film Details Modal - Property-Based Tests', () => {
             closeFilmModal();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });

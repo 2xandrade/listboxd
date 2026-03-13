@@ -4,6 +4,9 @@
  * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 7.1, 7.2, 7.3, 7.4, 7.5
  */
 
+// Import ErrorRecovery for error handling
+const ErrorRecovery = typeof require !== 'undefined' ? require('./error-recovery.js') : window.ErrorRecovery;
+
 // Import bcryptjs for password hashing (kept for backward compatibility with tests)
 let bcrypt;
 if (typeof window !== 'undefined' && window.dcodeIO?.bcrypt) {
@@ -83,6 +86,15 @@ class AuthService {
         isAdmin: session.isAdmin
       };
     } catch (error) {
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'AuthService.login',
+        email,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
+      
       // Provide user-friendly error messages
       if (error.message.includes('Network') || error.message.includes('fetch')) {
         throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
@@ -130,6 +142,16 @@ class AuthService {
         isAdmin: response.data.is_admin || false
       };
     } catch (error) {
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'AuthService.register',
+        nome,
+        email,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
+      
       // Provide user-friendly error messages
       if (error.message.includes('Network') || error.message.includes('fetch')) {
         throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');

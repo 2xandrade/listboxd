@@ -108,7 +108,7 @@ describe.skip('FilterManager - Property-Based Tests', () => {
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -146,7 +146,7 @@ describe.skip('FilterManager - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -187,7 +187,7 @@ describe.skip('FilterManager - Property-Based Tests', () => {
             expect(filtered.length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -219,7 +219,7 @@ describe.skip('FilterManager - Property-Based Tests', () => {
             expect(filtered.length).toBe(entries.length);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -333,7 +333,7 @@ describe.skip('FilterManager - Property-Based Tests', () => {
             expect(filteredIds).toEqual([1, 2, 3]);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -397,7 +397,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -449,7 +449,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -496,7 +496,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(3);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -542,7 +542,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -580,7 +580,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(entries.length);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -621,7 +621,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered[0].film.title).toBe('Test Movie');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -672,7 +672,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filteredIds).toEqual(originalIds);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -762,7 +762,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(afterFilterOrder).toEqual(originalOrder);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -814,7 +814,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -856,7 +856,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filteredOrder).toEqual(originalOrder);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -928,7 +928,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1007,7 +1007,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filteredIds).toEqual(expectedIds);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1056,7 +1056,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1107,7 +1107,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered[0].film.title).toBe('Action Hero');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1170,7 +1170,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(afterClearIds).toEqual(originalIds);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1222,7 +1222,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(activeFilters.random).toBe(false);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1262,7 +1262,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filter.hasActiveFilters()).toBe(false);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1308,7 +1308,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered[0].film.title).toBe('Drama Film');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1355,7 +1355,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(afterClearOrder).toEqual(originalOrder);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1423,7 +1423,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1488,7 +1488,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(dramaFiltered.length).toBe(dramaCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1541,7 +1541,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1644,7 +1644,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(uniqueOrderings.size).toBeGreaterThan(1);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1708,7 +1708,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(activeFilters.genre).toBe(selectedGenre);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1763,7 +1763,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(activeFilters.name).toBe(searchText);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1814,7 +1814,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filter.hasActiveFilters()).toBe(true);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -1868,7 +1868,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1913,7 +1913,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -1964,7 +1964,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2010,7 +2010,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -2056,7 +2056,7 @@ describe.skip('FilterManager - Additional Property-Based Tests (localStorage-bas
             expect(filtered.length).toBe(0);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });

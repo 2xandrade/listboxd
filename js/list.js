@@ -5,12 +5,15 @@
  */
 
 class ListService {
-  constructor(googleSheetsApi, authService) {
+  constructor(googleSheetsApi, authService, cacheManager, syncManager) {
     this.googleSheetsApi = googleSheetsApi;
     this.authService = authService;
-    this.sharedListCache = []; // Cache local da lista compartilhada
-    this.watchedMoviesCache = []; // Cache de filmes assistidos
+    this.cacheManager = cacheManager;
+    this.syncManager = syncManager;
     this.currentListId = null; // ID da lista atual
+    // Initialize legacy cache properties for backward compatibility
+    this.sharedListCache = [];
+    this.watchedMoviesCache = [];
   }
 
   /**
@@ -29,7 +32,12 @@ class ListService {
           'Lista compartilhada de filmes'
         );
         this.currentListId = defaultList.id_lista;
-        this.sharedListCache = [];
+        // Initialize empty cache
+        if (this.cacheManager) {
+          this.cacheManager.updateSharedListCache([]);
+        } else {
+          this.sharedListCache = [];
+        }
         console.log('✅ Lista padrão criada:', this.currentListId);
       } else {
         // Use the first list as default
@@ -39,10 +47,21 @@ class ListService {
         await this.refreshCache();
       }
     } catch (error) {
-      console.error('Error initializing ListService:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'ListService.initialize',
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       // Initialize with empty cache to prevent errors
-      this.sharedListCache = [];
-      this.watchedMoviesCache = [];
+      if (this.cacheManager) {
+        this.cacheManager.updateSharedListCache([]);
+        this.cacheManager.updateWatchedCache([]);
+      } else {
+        this.sharedListCache = [];
+        this.watchedMoviesCache = [];
+      }
     }
   }
 
@@ -57,9 +76,22 @@ class ListService {
     
     try {
       const movies = await this.getMoviesByList(this.currentListId);
-      this.sharedListCache = movies || [];
+      // Use CacheManager if available (Requirement 3.6)
+      if (this.cacheManager) {
+        this.cacheManager.updateSharedListCache(movies || []);
+      } else {
+        // Fallback to legacy cache
+        this.sharedListCache = movies || [];
+      }
     } catch (error) {
-      console.error('Error refreshing cache:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'ListService.refreshCache',
+        currentListId: this.currentListId,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
     }
   }
 
@@ -78,7 +110,14 @@ class ListService {
       const response = await this.googleSheetsApi.getListsByUser(currentUser.id);
       return response.data || [];
     } catch (error) {
-      console.error('Error fetching lists:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'ListService.getListsByUser',
+        userId: currentUser.id,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       throw new Error(`Failed to fetch lists: ${error.message}`);
     }
   }
@@ -110,7 +149,16 @@ class ListService {
       
       return response.data;
     } catch (error) {
-      console.error('Error creating list:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'ListService.createList',
+        userId: currentUser.id,
+        titulo,
+        descricao,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       throw new Error(`Failed to create list: ${error.message}`);
     }
   }
@@ -160,7 +208,17 @@ class ListService {
       
       return response.data;
     } catch (error) {
-      console.error('Error adding watched movie:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'ListService.addWatchedMovie',
+        userId: currentUser.id,
+        listId: idLista,
+        filmTitle: film.title,
+        rating,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       throw new Error(`Failed to add watched movie: ${error.message}`);
     }
   }
@@ -190,7 +248,15 @@ class ListService {
       
       return response.data || [];
     } catch (error) {
-      console.error('Error fetching movies:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'ListService.getMoviesByList',
+        userId: currentUser.id,
+        listId: idLista,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       throw new Error(`Failed to fetch movies: ${error.message}`);
     }
   }
@@ -216,6 +282,11 @@ class ListService {
    * @returns {Array} Array of list entries
    */
   getSharedList() {
+    // Use CacheManager if available (Requirement 3.6)
+    if (this.cacheManager) {
+      return this.cacheManager.getSharedList();
+    }
+    // Fallback to legacy cache
     return this.sharedListCache || [];
   }
 
@@ -259,8 +330,16 @@ class ListService {
       addedAt: new Date().toISOString()
     };
     
-    // Add to local cache immediately for instant UI update
-    this.sharedListCache.push(entry);
+    // Add to local cache immediately for instant UI update (Requirement 3.1)
+    if (this.cacheManager) {
+      this.cacheManager.addToSharedList(entry);
+    } else {
+      // Fallback to legacy cache if cacheManager not available
+      if (!this.sharedListCache) {
+        this.sharedListCache = [];
+      }
+      this.sharedListCache.push(entry);
+    }
     
     // Try to persist to Google Sheets in background
     // Using addWatchedMovie with nota=0 as a workaround
@@ -286,6 +365,18 @@ class ListService {
         entry.id_filme = response.data.id_filme;
       }
     } catch (error) {
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'ListService.addFilmToList',
+        currentListId: this.currentListId,
+        filmId: film.id,
+        filmTitle: film.title,
+        userId,
+        username,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       console.warn('Failed to persist to Google Sheets:', error.message);
       // Keep in cache anyway for now
     }
@@ -298,9 +389,15 @@ class ListService {
    * @param {string} entryId - Entry ID
    */
   removeFilmFromList(entryId) {
-    const index = this.sharedListCache.findIndex(movie => movie.id_filme === entryId);
-    if (index !== -1) {
-      this.sharedListCache.splice(index, 1);
+    // Use CacheManager if available (Requirement 3.1)
+    if (this.cacheManager) {
+      this.cacheManager.removeFromSharedList(entryId);
+    } else {
+      // Fallback to legacy cache
+      const index = this.sharedListCache.findIndex(movie => movie.id_filme === entryId);
+      if (index !== -1) {
+        this.sharedListCache.splice(index, 1);
+      }
     }
   }
 
@@ -316,7 +413,8 @@ class ListService {
    */
   async markAsWatched(filmId, rating, userId, username, review = '', isAdmin = false) {
     // Find the film in the shared list cache
-    const filmEntry = this.sharedListCache.find(entry => 
+    const sharedList = this.cacheManager ? this.cacheManager.getSharedList() : this.sharedListCache;
+    const filmEntry = sharedList.find(entry => 
       entry.film && entry.film.id === filmId
     );
     
@@ -337,23 +435,46 @@ class ListService {
         review
       );
       
-      // Add to watched cache
-      this.watchedMoviesCache.push({
+      const watchedMovie = {
         ...watchedEntry,
         film: filmEntry.film,
         addedBy: username,
         addedByUserId: userId
-      });
+      };
       
-      // Remove from shared list cache
-      const index = this.sharedListCache.findIndex(e => e.id === filmEntry.id);
-      if (index !== -1) {
-        this.sharedListCache.splice(index, 1);
+      // Add to watched cache (Requirement 5.1)
+      if (this.cacheManager) {
+        const watchedList = this.cacheManager.getWatchedList();
+        watchedList.push(watchedMovie);
+        this.cacheManager.updateWatchedCache(watchedList);
+      } else {
+        this.watchedMoviesCache.push(watchedMovie);
+      }
+      
+      // Remove from shared list cache (Requirement 5.2)
+      if (this.cacheManager) {
+        this.cacheManager.removeFromSharedList(filmEntry.id);
+      } else {
+        const index = this.sharedListCache.findIndex(e => e.id === filmEntry.id);
+        if (index !== -1) {
+          this.sharedListCache.splice(index, 1);
+        }
       }
       
       return watchedEntry;
     } catch (error) {
-      console.error('Error marking as watched:', error.message);
+      // Log API responses and status codes on errors (Requirement 6.2)
+      ErrorRecovery.logError(error, {
+        context: 'ListService.markAsWatched',
+        filmId,
+        rating,
+        userId,
+        username,
+        isAdmin,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
       throw error;
     }
   }

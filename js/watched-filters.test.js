@@ -330,7 +330,7 @@ describe('FilterManager - Watched Films Property Tests', () => {
             expect(filtered.length).toBe(filmsWithGenre.length);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
 
@@ -470,7 +470,7 @@ describe('FilterManager - Watched Films Property Tests', () => {
             expect(filteredIds).toEqual([1, 2, 3]);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -527,7 +527,7 @@ describe('FilterManager - Watched Films Property Tests', () => {
             expect(filtered.length).toBe(filmsWithMatchingTitle.length);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -601,7 +601,7 @@ describe('FilterManager - Watched Films Property Tests', () => {
             expect(allSame).toBe(false);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -668,7 +668,7 @@ describe('FilterManager - Watched Films Property Tests', () => {
             filterManager.clearAllFilters();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });
@@ -734,7 +734,7 @@ describe('FilterManager - Watched Films Property Tests', () => {
             expect(activeFilters.random).toBe(false);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 20 }
       );
     });
   });

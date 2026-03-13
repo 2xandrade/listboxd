@@ -208,6 +208,85 @@ header {
     backdrop-filter: blur(10px);
 }
 
+/* Offline Indicator */
+.offline-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--color-warning-orange) 0%, var(--color-warning-orange-dark) 100%);
+    color: var(--color-text-primary);
+    padding: var(--spacing-md) var(--spacing-xl);
+    text-align: center;
+    z-index: 10000;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-md);
+    animation: slideDown 0.3s ease-out;
+}
+
+.offline-indicator.hidden {
+    display: none;
+}
+
+.offline-indicator .offline-icon {
+    font-size: var(--font-size-xl);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.offline-indicator .offline-text {
+    flex: 1;
+    max-width: 800px;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+/* Adjust header position when offline indicator is shown */
+body.offline header {
+    top: 48px;
+}
+
+@media (max-width: 768px) {
+    .offline-indicator {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--font-size-sm);
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+    
+    .offline-indicator .offline-icon {
+        font-size: var(--font-size-lg);
+    }
+    
+    body.offline header {
+        top: 60px;
+    }
+}
+
 header h1 {
     color: var(--color-text-primary);
     font-size: var(--font-size-8xl);
