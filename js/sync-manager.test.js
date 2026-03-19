@@ -122,7 +122,12 @@ describe('SyncManager - Property-Based Tests', () => {
                 data: [] 
               }),
               deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
-              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true })
+              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+              addMovieToList: jest.fn().mockResolvedValue({ 
+                ok: true, 
+                id: 'real-id',
+                data: { id: 'real-id' }
+              })
             };
             
             const storage = createIsolatedStorage();
@@ -140,10 +145,10 @@ describe('SyncManager - Property-Based Tests', () => {
             await sync.syncOperation(operation);
             
             // Verify API was called
-            expect(mockApi.getMoviesByList).toHaveBeenCalled();
+            expect(mockApi.addMovieToList).toHaveBeenCalled();
             
             // Verify all required fields were included in the call
-            const callArgs = mockApi.getMoviesByList.mock.calls[0][0];
+            const callArgs = mockApi.addMovieToList.mock.calls[0][0];
             expect(callArgs.id_lista).toBe(operationData.id_lista);
             expect(callArgs.id_usuario).toBe(operationData.id_usuario);
             
@@ -173,7 +178,8 @@ describe('SyncManager - Property-Based Tests', () => {
             const mockApi = {
               getMoviesByList: jest.fn().mockResolvedValue({ ok: true, data: [] }),
               deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
-              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true })
+              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+              addMovieToList: jest.fn().mockResolvedValue({ ok: true })
             };
             
             const storage = createIsolatedStorage();
@@ -217,7 +223,8 @@ describe('SyncManager - Property-Based Tests', () => {
             const mockApi = {
               getMoviesByList: jest.fn().mockResolvedValue({ ok: true, data: [] }),
               deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
-              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true })
+              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+              addMovieToList: jest.fn().mockResolvedValue({ ok: true })
             };
             
             const storage = createIsolatedStorage();
@@ -234,7 +241,7 @@ describe('SyncManager - Property-Based Tests', () => {
             await expect(sync.syncOperation(operation)).rejects.toThrow();
             
             // API should not be called with incomplete data
-            expect(mockApi.getMoviesByList).not.toHaveBeenCalled();
+            expect(mockApi.addMovieToList).not.toHaveBeenCalled();
           }
         ),
         { numRuns: 5 }
@@ -268,7 +275,12 @@ describe('SyncManager - Property-Based Tests', () => {
                 data: { id: realId }
               }),
               deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
-              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true })
+              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+              addMovieToList: jest.fn().mockResolvedValue({ 
+                ok: true, 
+                id: realId,
+                data: { id: realId }
+              })
             };
             
             const storage = createIsolatedStorage();
@@ -327,6 +339,11 @@ describe('SyncManager - Property-Based Tests', () => {
               getMoviesByList: jest.fn().mockResolvedValue({ ok: true, data: [] }),
               deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
               addWatchedMovie: jest.fn().mockResolvedValue({ 
+                ok: true, 
+                id: realId,
+                data: { id: realId }
+              }),
+              addMovieToList: jest.fn().mockResolvedValue({ 
                 ok: true, 
                 id: realId,
                 data: { id: realId }
@@ -391,7 +408,12 @@ describe('SyncManager - Property-Based Tests', () => {
                 data: { id: realId }
               }),
               deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
-              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true })
+              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+              addMovieToList: jest.fn().mockResolvedValue({ 
+                ok: true, 
+                id: realId,
+                data: { id: realId }
+              })
             };
             
             const storage = createIsolatedStorage();
@@ -458,7 +480,8 @@ describe('SyncManager - Property-Based Tests', () => {
             const mockApi = {
               getMoviesByList: jest.fn().mockRejectedValue(new Error('API Error')),
               deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
-              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true })
+              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+              addMovieToList: jest.fn().mockRejectedValue(new Error('API Error'))
             };
             
             const storage = createIsolatedStorage();
@@ -515,7 +538,8 @@ describe('SyncManager - Property-Based Tests', () => {
             const mockApi = {
               getMoviesByList: jest.fn().mockResolvedValue({ ok: true, data: [] }),
               deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
-              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true })
+              addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+              addMovieToList: jest.fn().mockResolvedValue({ ok: true })
             };
             
             const storage = createIsolatedStorage();
@@ -565,7 +589,8 @@ describe('SyncManager - Property-Based Tests', () => {
             const mockApi = {
               getMoviesByList: jest.fn().mockRejectedValue(new Error('Network Error')),
               deleteMovie: jest.fn().mockRejectedValue(new Error('Network Error')),
-              addWatchedMovie: jest.fn().mockRejectedValue(new Error('Network Error'))
+              addWatchedMovie: jest.fn().mockRejectedValue(new Error('Network Error')),
+              addMovieToList: jest.fn().mockRejectedValue(new Error('Network Error'))
             };
             
             const storage = createIsolatedStorage();
@@ -633,7 +658,8 @@ describe('SyncManager - Property-Based Tests', () => {
       const mockApi = {
         getMoviesByList: jest.fn(),
         deleteMovie: jest.fn(),
-        addWatchedMovie: jest.fn()
+        addWatchedMovie: jest.fn(),
+        addMovieToList: jest.fn()
       };
       
       expect(() => new SyncManager(mockApi, null)).toThrow('CacheManager');
@@ -643,7 +669,8 @@ describe('SyncManager - Property-Based Tests', () => {
       const mockApi = {
         getMoviesByList: jest.fn(),
         deleteMovie: jest.fn(),
-        addWatchedMovie: jest.fn()
+        addWatchedMovie: jest.fn(),
+        addMovieToList: jest.fn()
       };
       
       const storage = createIsolatedStorage();
@@ -666,7 +693,8 @@ describe('SyncManager - Property-Based Tests', () => {
       const mockApi = {
         getMoviesByList: jest.fn().mockResolvedValue({ ok: true, data: [] }),
         deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
-        addWatchedMovie: jest.fn().mockResolvedValue({ ok: true })
+        addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+        addMovieToList: jest.fn().mockResolvedValue({ ok: true })
       };
       
       const storage = createIsolatedStorage();
@@ -687,7 +715,8 @@ describe('SyncManager - Property-Based Tests', () => {
       const mockApi = {
         getMoviesByList: jest.fn().mockResolvedValue({ ok: true, data: [] }),
         deleteMovie: jest.fn().mockResolvedValue({ ok: true }),
-        addWatchedMovie: jest.fn().mockResolvedValue({ ok: true })
+        addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+        addMovieToList: jest.fn().mockResolvedValue({ ok: true })
       };
       
       const storage = createIsolatedStorage();

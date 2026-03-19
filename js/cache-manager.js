@@ -156,16 +156,27 @@ class CacheManager {
       return;
     }
 
+    // Deduplicate entries by ID to ensure unique entries in cache
+    const uniqueEntries = [];
+    const seenIds = new Set();
+    for (const entry of entries) {
+      const entryId = entry.id || entry.id_filme;
+      if (entryId && !seenIds.has(entryId)) {
+        seenIds.add(entryId);
+        uniqueEntries.push(entry);
+      }
+    }
+
     const previousLength = this.sharedListCache ? this.sharedListCache.length : 0;
-    this.sharedListCache = entries;
-    this.storage.save(this.SHARED_LIST_KEY, entries);
+    this.sharedListCache = uniqueEntries;
+    this.storage.save(this.SHARED_LIST_KEY, uniqueEntries);
     
     // Log cache state changes (Requirement 6.3)
     console.log(`CacheManager: Updated shared list cache`, {
       previousLength,
-      currentLength: entries.length,
-      entriesAdded: Math.max(0, entries.length - previousLength),
-      entriesRemoved: Math.max(0, previousLength - entries.length)
+      currentLength: uniqueEntries.length,
+      entriesAdded: Math.max(0, uniqueEntries.length - previousLength),
+      entriesRemoved: Math.max(0, previousLength - uniqueEntries.length)
     });
   }
 

@@ -144,11 +144,16 @@ describe('CacheManager - Property-Based Tests', () => {
             const cache = new CacheManager(storage);
             
             // Deduplicate entries by ID to get expected count
+            // Match the cache's deduplication logic which checks both id and id_filme
             const uniqueEntries = [];
             const seenIds = new Set();
             for (const entry of entries) {
-              if (!seenIds.has(entry.id)) {
-                seenIds.add(entry.id);
+              const entryId = entry.id || entry.id_filme;
+              const entryIdFilme = entry.id_filme || entry.id;
+              // Check if either ID has been seen
+              if (!seenIds.has(entryId) && !seenIds.has(entryIdFilme)) {
+                seenIds.add(entryId);
+                seenIds.add(entryIdFilme);
                 uniqueEntries.push(entry);
               }
             }
@@ -449,6 +454,17 @@ describe('CacheManager - Property-Based Tests', () => {
           (entries) => {
             const storage = createIsolatedStorage();
             
+            // Deduplicate entries by ID to get expected count
+            const uniqueEntries = [];
+            const seenIds = new Set();
+            for (const entry of entries) {
+              const entryId = entry.id || entry.id_filme;
+              if (entryId && !seenIds.has(entryId)) {
+                seenIds.add(entryId);
+                uniqueEntries.push(entry);
+              }
+            }
+            
             // Create first cache instance and add data
             const cache1 = new CacheManager(storage);
             cache1.updateSharedListCache(entries);
@@ -457,13 +473,14 @@ describe('CacheManager - Property-Based Tests', () => {
             const cache2 = new CacheManager(storage);
             const cachedList = cache2.getSharedList();
             
-            // Second instance should read persisted data
-            expect(cachedList.length).toBe(entries.length);
+            // Second instance should read persisted data (deduplicated)
+            expect(cachedList.length).toBe(uniqueEntries.length);
             
-            // Verify data matches
-            entries.forEach((entry, index) => {
-              expect(cachedList[index].id).toBe(entry.id);
-              expect(cachedList[index].film.title).toBe(entry.film.title);
+            // Verify data matches (check that all unique entries are present)
+            uniqueEntries.forEach((entry) => {
+              const found = cachedList.find(e => e.id === entry.id);
+              expect(found).toBeDefined();
+              expect(found.film.title).toBe(entry.film.title);
             });
           }
         ),

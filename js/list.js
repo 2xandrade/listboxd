@@ -4,6 +4,9 @@
  * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 3.5, 4.4, 4.5
  */
 
+// Import ErrorRecovery for error handling
+const ErrorRecovery = typeof require !== 'undefined' ? require('./error-recovery.js') : window.ErrorRecovery;
+
 class ListService {
   constructor(googleSheetsApi, authService, cacheManager, syncManager) {
     this.googleSheetsApi = googleSheetsApi;
@@ -295,6 +298,11 @@ class ListService {
    * @returns {Array} Array of watched movie entries
    */
   getWatchedList() {
+    // Use CacheManager if available (Requirement 3.6)
+    if (this.cacheManager) {
+      return this.cacheManager.getWatchedList();
+    }
+    // Fallback to legacy cache
     return this.watchedMoviesCache || [];
   }
 
@@ -311,9 +319,11 @@ class ListService {
     }
     
     // Create entry with proper structure
+    // Use timestamp + random string for unique ID to avoid collisions
+    const uniqueId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const entry = {
-      id: `temp-${Date.now()}`,
-      id_filme: `temp-${Date.now()}`,
+      id: uniqueId,
+      id_filme: uniqueId,
       film: {
         id: film.id,
         title: film.title,
@@ -361,8 +371,28 @@ class ListService {
       
       // Update entry with real ID from server
       if (response && response.data) {
-        entry.id = response.data.id_filme;
-        entry.id_filme = response.data.id_filme;
+        const oldId = entry.id;
+        const newId = response.data.id_filme;
+        entry.id = newId;
+        entry.id_filme = newId;
+        
+        // Update the ID in the cache as well
+        if (this.cacheManager) {
+          const sharedList = this.cacheManager.getSharedList();
+          const cachedEntry = sharedList.find(e => e.id === oldId);
+          if (cachedEntry) {
+            cachedEntry.id = newId;
+            cachedEntry.id_filme = newId;
+            this.cacheManager.updateSharedListCache(sharedList);
+          }
+        } else {
+          // Update in legacy cache
+          const cachedEntry = this.sharedListCache.find(e => e.id === oldId);
+          if (cachedEntry) {
+            cachedEntry.id = newId;
+            cachedEntry.id_filme = newId;
+          }
+        }
       }
     } catch (error) {
       // Log API responses and status codes on errors (Requirement 6.2)
@@ -438,9 +468,22 @@ class ListService {
       const watchedMovie = {
         ...watchedEntry,
         film: filmEntry.film,
+        nota: rating,
+        rating: rating,
+        review: review,
         addedBy: username,
         addedByUserId: userId
       };
+      
+      // Remove from shared list cache FIRST (Requirement 5.2)
+      if (this.cacheManager) {
+        this.cacheManager.removeFromSharedList(filmEntry.id);
+      } else {
+        const index = this.sharedListCache.findIndex(e => e.id === filmEntry.id);
+        if (index !== -1) {
+          this.sharedListCache.splice(index, 1);
+        }
+      }
       
       // Add to watched cache (Requirement 5.1)
       if (this.cacheManager) {
@@ -451,17 +494,7 @@ class ListService {
         this.watchedMoviesCache.push(watchedMovie);
       }
       
-      // Remove from shared list cache (Requirement 5.2)
-      if (this.cacheManager) {
-        this.cacheManager.removeFromSharedList(filmEntry.id);
-      } else {
-        const index = this.sharedListCache.findIndex(e => e.id === filmEntry.id);
-        if (index !== -1) {
-          this.sharedListCache.splice(index, 1);
-        }
-      }
-      
-      return watchedEntry;
+      return watchedMovie;
     } catch (error) {
       // Log API responses and status codes on errors (Requirement 6.2)
       ErrorRecovery.logError(error, {

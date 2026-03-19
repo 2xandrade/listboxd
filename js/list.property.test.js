@@ -62,6 +62,9 @@ describe('ListService - Property 11: Watched film state transition', () => {
         usernameArb,
         reviewArb,
         async (film, addUserId, addUsername, rating, watchUserId, watchUsername, review) => {
+          // Create unique ID counter for mock API
+          let idCounter = 0;
+          
           // Create mock API
           const mockApi = {
             getListsByUser: jest.fn().mockResolvedValue({ 
@@ -69,9 +72,11 @@ describe('ListService - Property 11: Watched film state transition', () => {
               data: [{ id_lista: 'test-list-1', titulo: 'Test List' }] 
             }),
             getMoviesByList: jest.fn().mockResolvedValue({ ok: true, data: [] }),
-            addWatchedMovie: jest.fn().mockResolvedValue({ 
-              ok: true, 
-              data: { id_filme: `watched-${Date.now()}` } 
+            addWatchedMovie: jest.fn().mockImplementation(() => {
+              return Promise.resolve({ 
+                ok: true, 
+                data: { id_filme: `watched-${Date.now()}-${idCounter++}` } 
+              });
             }),
             deleteMovie: jest.fn().mockResolvedValue({ ok: true })
           };
@@ -90,13 +95,13 @@ describe('ListService - Property 11: Watched film state transition', () => {
           const sync = new SyncManager(mockApi, cache);
           const listService = new ListService(mockApi, mockAuthService, cache, sync);
 
-          // Initialize with empty caches
-          listService.sharedListCache = [];
-          listService.watchedMoviesCache = [];
+          // Initialize with empty caches (use cacheManager, not legacy properties)
+          cache.updateSharedListCache([]);
+          cache.updateWatchedCache([]);
           listService.currentListId = 'test-list-1';
 
-          // Add film to shared list
-          const entry = listService.addFilmToList(film, addUserId, addUsername);
+          // Add film to shared list (await the async operation)
+          await listService.addFilmToList(film, addUserId, addUsername);
           
           // Verify film is in shared list
           const sharedListBefore = listService.getSharedList();
@@ -158,6 +163,9 @@ describe('ListService - Property 11: Watched film state transition', () => {
           { minLength: 2, maxLength: 5, selector: (item) => item.film.id }
         ),
         async (entries) => {
+          // Create unique ID counter for mock API
+          let idCounter = 0;
+          
           // Create mock API
           const mockApi = {
             getListsByUser: jest.fn().mockResolvedValue({ 
@@ -165,9 +173,11 @@ describe('ListService - Property 11: Watched film state transition', () => {
               data: [{ id_lista: 'test-list-1', titulo: 'Test List' }] 
             }),
             getMoviesByList: jest.fn().mockResolvedValue({ ok: true, data: [] }),
-            addWatchedMovie: jest.fn().mockResolvedValue({ 
-              ok: true, 
-              data: { id_filme: `watched-${Date.now()}` } 
+            addWatchedMovie: jest.fn().mockImplementation(() => {
+              return Promise.resolve({ 
+                ok: true, 
+                data: { id_filme: `watched-${Date.now()}-${idCounter++}` } 
+              });
             }),
             deleteMovie: jest.fn().mockResolvedValue({ ok: true })
           };
@@ -186,14 +196,14 @@ describe('ListService - Property 11: Watched film state transition', () => {
           const sync = new SyncManager(mockApi, cache);
           const listService = new ListService(mockApi, mockAuthService, cache, sync);
 
-          // Initialize with empty caches
-          listService.sharedListCache = [];
-          listService.watchedMoviesCache = [];
+          // Initialize with empty caches (use cacheManager, not legacy properties)
+          cache.updateSharedListCache([]);
+          cache.updateWatchedCache([]);
           listService.currentListId = 'test-list-1';
 
-          // Add all films to shared list
+          // Add all films to shared list (await each async operation)
           for (const entry of entries) {
-            listService.addFilmToList(entry.film, entry.addUserId, entry.addUsername);
+            await listService.addFilmToList(entry.film, entry.addUserId, entry.addUsername);
           }
           
           // Verify all films are in shared list
@@ -249,6 +259,9 @@ describe('ListService - Property 11: Watched film state transition', () => {
         usernameArb,
         reviewArb,
         async (nonExistentFilmId, rating, userId, username, review) => {
+          // Create unique ID counter for mock API
+          let idCounter = 0;
+          
           // Create mock API
           const mockApi = {
             getListsByUser: jest.fn().mockResolvedValue({ 
@@ -256,7 +269,12 @@ describe('ListService - Property 11: Watched film state transition', () => {
               data: [{ id_lista: 'test-list-1', titulo: 'Test List' }] 
             }),
             getMoviesByList: jest.fn().mockResolvedValue({ ok: true, data: [] }),
-            addWatchedMovie: jest.fn().mockResolvedValue({ ok: true }),
+            addWatchedMovie: jest.fn().mockImplementation(() => {
+              return Promise.resolve({ 
+                ok: true, 
+                data: { id_filme: `watched-${Date.now()}-${idCounter++}` } 
+              });
+            }),
             deleteMovie: jest.fn().mockResolvedValue({ ok: true })
           };
 
@@ -274,21 +292,15 @@ describe('ListService - Property 11: Watched film state transition', () => {
           const sync = new SyncManager(mockApi, cache);
           const listService = new ListService(mockApi, mockAuthService, cache, sync);
 
-          // Initialize with empty caches
-          listService.sharedListCache = [];
-          listService.watchedMoviesCache = [];
+          // Initialize with empty caches (use cacheManager, not legacy properties)
+          cache.updateSharedListCache([]);
+          cache.updateWatchedCache([]);
           listService.currentListId = 'test-list-1';
 
           // Attempt to mark non-existent film as watched should throw
-          let errorThrown = false;
-          try {
-            await listService.markAsWatched(nonExistentFilmId, rating, userId, username, review, true);
-          } catch (error) {
-            errorThrown = true;
-            expect(error.message).toBe('Film not found in shared list');
-          }
-          
-          expect(errorThrown).toBe(true);
+          await expect(
+            listService.markAsWatched(nonExistentFilmId, rating, userId, username, review, true)
+          ).rejects.toThrow('Film not found in shared list');
           
           // Both lists should remain empty
           expect(listService.getSharedList().length).toBe(0);
